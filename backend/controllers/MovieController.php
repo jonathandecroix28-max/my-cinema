@@ -1,14 +1,60 @@
-<?php 
+<?php
+
 class MovieController
 {
     private $repository;
-    public function __construct($pdo)
+
+    public function __construct()
     {
-        $this->repository = new MovieRepository($pdo); // repository créé par la suite
+        $this->repository = new MovieRepository(); // repository créé par la suite
     }
+
     public function list()
-    { // Méthode appelée par le fichier index . php
+    {
         echo json_encode($this->repository->getAll());
     }
-    // Autres méthodes correspondant aux autres routes API .
-} ?>
+
+    public function add()
+    {
+        $data = json_decode(file_get_contents('php://input'), true); // Pour les requêtes POST/PUT
+
+        // vérifier que toutes les données obligatoires sont présentes
+        if (!isset($data['title'], $data['description'], $data['duration'], $data['release_year'], $data['genre'], $data['director'])) {
+            echo json_encode(["success" => false, "error" => "Données manquantes"]);
+            return;
+        }
+
+        $movie = new Movie();
+        $movie->title = $data['title'];
+        $movie->description = $data['description'];
+        $movie->duration = $data['duration'];
+        $movie->release_year = $data['release_year'];
+        $movie->genre = $data['genre'];
+        $movie->director = $data['director'];
+        $movie->created_at = date('Y-m-d H:i:s');
+        $movie->updated_at = date('Y-m-d H:i:s');
+
+        try {
+            $this->repository->add($movie);
+            echo json_encode(["success" => true, "message" => "Film ajouté !"]);
+        } catch (Exception $e) {
+            echo json_encode(["success" => false, "error" => "Erreur lors de l'ajout du film."]);
+        }
+    }
+
+    public function get()
+    {
+        $id = $_GET['id'] ?? null;
+        if ($id === null) {
+            echo json_encode(["error" => "ID manquant"]);
+            return;
+        }
+
+        $movie = $this->repository->find($id);
+        if ($movie) {
+            echo json_encode($movie);
+        } else {
+            echo json_encode(["error" => "Film non trouvé"]);
+        }
+    }
+}

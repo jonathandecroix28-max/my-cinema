@@ -1,29 +1,38 @@
 <?php
-require_once __DIR__ . '/../models/Movie.php';
 class MovieRepository
 {
     private $pdo;
-    public function __construct($pdo)
+    public function __construct()
     {
+        global $pdo;
         $this->pdo = $pdo;
     }
     public function getAll()
     {
-        $stmt = $this->pdo->query(" SELECT * FROM movies");
+        $stmt = $this->pdo->query(" SELECT * FROM movies ");
         return $stmt->fetchAll(PDO::FETCH_CLASS, "Movie");
     }
     public function add(Movie $movie)
     {
-        $stmt = $this->pdo->prepare("INSERT INTO movies (title, description, duration,
-release_year,genre, director) VALUES (? , ?, ?, ?, ?, ?) ");
+        $stmt = $this->pdo->prepare(" INSERT INTO movies (title, description, duration,
+release_year, genre, director, created_at, updated_at) VALUES (? , ? , ?, ? , ?, ?, ? , ? )");
         $stmt->execute([
             $movie->title,
             $movie->description,
             $movie->duration,
             $movie->release_year,
             $movie->genre,
-            $movie->director
+            $movie->director,
+            $movie->created_at,
+            $movie->updated_at
         ]);
     }
     // Méthodes update , delete , find , etc similaires
+
+    public function find($id)
+    {
+        $stmt = $this->pdo->prepare(" SELECT * FROM movies WHERE id = ? ");
+        $stmt->execute([$id]);
+        return $stmt->fetchObject("Movie");
+    }
 } ?>

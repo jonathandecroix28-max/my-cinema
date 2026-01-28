@@ -1,5 +1,5 @@
 <?php
-
+/*
 class RoomController
 {
     private $repository;

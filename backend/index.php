@@ -1,36 +1,37 @@
 <?php
-require_once 'config/database.php'; // définit $pdo
-require_once 'repositories/MovieRepository.php';
-require_once 'controllers/MovieController.php';
-require_once 'repositories/RoomRepository.php';
-require_once 'controllers/RoomController.php';
-require_once 'repositories/ScreeningRepository.php';
-require_once 'controllers/ScreeningController.php';
+// On affiche les erreurs pour voir ce qui se passe
+echo "Le fichier index.php est lu par le serveur !";
 
-$movieRepository = new MovieRepository($pdo);
-$roomRepository = new RoomRepository($pdo);
-$screeningRepository = new ScreeningRepository($pdo);
+// Le chemin ABSOLU vers ton fichier de base de données
+/*$db_file = __DIR__ . '/config/database.php';
 
+if (file_exists($db_file)) {
+    require_once $db_file;
+} else {
+    die("ERREUR : Le fichier est introuvable à cet endroit : " . $db_file);
+}
+
+
+// autoload de toutes les classes
+require_once __DIR__ . '/autoload.php';
+
+// récupérer le paramètre action
 $request = $_GET['action'] ?? '';
-// Récupération du paramètre d ' URL action indiquant la route API
-header('Content-Type: application/json');
 
 switch ($request) {
     case 'list_movies':
-        $controller = new MovieController($pdo);
+        $controller = new MovieController();
         $controller->list();
         break;
     case 'add_movie':
-        $controller = new MovieController($pdo);
+        $controller = new MovieController();
         $controller->add();
         break;
-    case 'list_rooms':
-        $controller = new RoomController($pdo);
-        $controller->list();
+    case 'get_movie':
+        $controller = new MovieController();
+        $controller->get();
         break;
-    // ... autres actions pour Room et Screening
     default:
-        echo json_encode(["error" => "Action not found"]);
+        echo json_encode(["error" => "Action non trouvée"]);
         break;
 }
-?>
