@@ -10,6 +10,8 @@ class Movie
     public $release_year;
     public $genre;
     public $director;
+    public $created_at;
+    public $updated_at;
 }
 
 ?>

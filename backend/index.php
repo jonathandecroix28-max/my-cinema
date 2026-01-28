@@ -1,15 +1,11 @@
 <?php
-// On affiche les erreurs pour voir ce qui se passe
-echo "Le fichier index.php est lu par le serveur !";
-
+// On affiche les erreurs pour voir ce qui se passer
+ini_set('display_errors', 1);
+error_reporting(E_ALL);
+require_once(__DIR__ . '/config/database.php');
+//echo "Le fichier index.php est lu par le serveur !";
 // Le chemin ABSOLU vers ton fichier de base de données
-/*$db_file = __DIR__ . '/config/database.php';
 
-if (file_exists($db_file)) {
-    require_once $db_file;
-} else {
-    die("ERREUR : Le fichier est introuvable à cet endroit : " . $db_file);
-}
 
 
 // autoload de toutes les classes
@@ -35,3 +31,4 @@ switch ($request) {
         echo json_encode(["error" => "Action non trouvée"]);
         break;
 }
+?>
