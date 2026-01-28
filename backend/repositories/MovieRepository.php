@@ -35,4 +35,25 @@ release_year, genre, director, created_at, updated_at) VALUES (? , ? , ?, ? , ?,
         $stmt->execute([$id]);
         return $stmt->fetchObject("Movie");
     }
+
+    public function delete($id)
+    {
+        $stmt = $this->pdo->prepare(" DELETE FROM movies WHERE id = ? ");
+        $stmt->execute([$id]);
+    }
+    public function update(Movie $movie)
+    {
+        $stmt = $this->pdo->prepare(" UPDATE movies SET title = ?, description = ?, duration = ?,
+        release_year = ?, genre = ?, director = ?, updated_at = ? WHERE id = ? ");
+        $stmt->execute([
+            $movie->title,
+            $movie->description,
+            $movie->duration,
+            $movie->release_year,
+            $movie->genre,
+            $movie->director,
+            $movie->updated_at,
+            $movie->id
+        ]);
+    }
 } ?>

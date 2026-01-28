@@ -57,4 +57,53 @@ class MovieController
             echo json_encode(["error" => "Film non trouvé"]);
         }
     }
+
+    public function update()
+    {
+        $id = $_GET['id'] ?? null;
+        if ($id === null) {
+            echo json_encode(["error" => "ID manquant"]);
+            return;
+        }
+
+        $data = json_decode(file_get_contents('php://input'), true); // Pour les requêtes POST/PUT
+
+        $movie = $this->repository->find($id);
+        if (!$movie) {
+            echo json_encode(["error" => "Film non trouvé"]);
+            return;
+        }
+
+        // Mettre à jour les propriétés du film
+        $movie->title = $data['title'] ?? $movie->title;
+        $movie->description = $data['description'] ?? $movie->description;
+        $movie->duration = $data['duration'] ?? $movie->duration;
+        $movie->release_year = $data['release_year'] ?? $movie->release_year;
+        $movie->genre = $data['genre'] ?? $movie->genre;
+        $movie->director = $data['director'] ?? $movie->director;
+        $movie->updated_at = date('Y-m-d H:i:s');
+
+        try {
+            $this->repository->update($movie);
+            echo json_encode(["success" => true, "message" => "Film mis à jour !"]);
+        } catch (Exception $e) {
+            echo json_encode(["success" => false, "error" => "Erreur lors de la mise à jour du film."]);
+        }
+    }
+
+    public function remove()
+    {
+        $id = $_GET['id'] ?? null;
+        if ($id === null) {
+            echo json_encode(["error" => "ID manquant"]);
+            return;
+        }
+
+        try {
+            $this->repository->delete($id);
+            echo json_encode(["success" => true, "message" => "Film supprimé !"]);
+        } catch (Exception $e) {
+            echo json_encode(["success" => false, "error" => "Erreur lors de la suppression du film."]);
+        }
+    }
 }

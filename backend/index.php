@@ -27,6 +27,14 @@ switch ($request) {
         $controller = new MovieController();
         $controller->get();
         break;
+    case 'delete_movie':
+        $controller = new MovieController();
+        $controller->remove();
+        break;
+    case 'update_movie':
+        $controller = new MovieController();
+        $controller->update();
+        break;
     default:
         echo json_encode(["error" => "Action non trouvée"]);
         break;
