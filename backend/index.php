@@ -35,6 +35,34 @@ switch ($request) {
         $controller = new MovieController();
         $controller->update();
         break;
+    case 'list_rooms':
+        $controller = new RoomController();
+        $controller->list();
+        break;
+    case 'add_room':
+        $controller = new RoomController();
+        $controller->add();
+        break;
+    case 'get_room':
+        $controller = new RoomController();
+        $controller->get();
+        break;
+    case 'delete_room':
+        $controller = new RoomController();
+        $controller->remove();
+        break;
+    case 'update_room':
+        $controller = new RoomController();
+        $controller->update();
+        break;
+    case 'list_screenings':
+        $controller = new ScreeningController();
+        $controller->list();
+        break;
+    case 'add_screening':
+        $controller = new ScreeningController();
+        $controller->add();
+        break;
     default:
         echo json_encode(["error" => "Action non trouvée"]);
         break;

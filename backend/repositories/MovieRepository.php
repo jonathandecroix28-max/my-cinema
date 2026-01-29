@@ -56,4 +56,11 @@ release_year, genre, director, created_at, updated_at) VALUES (? , ? , ?, ? , ?,
             $movie->id
         ]);
     }
+    public function exists(int $movie_id): bool
+    {
+        // Retourne true si le film existe dans la table movies, false sinon
+        $stmt = $this->pdo->prepare("SELECT COUNT(*) FROM movies WHERE id = ?");
+        $stmt->execute([$movie_id]);
+        return $stmt->fetchColumn() > 0;
+    }
 } ?>
