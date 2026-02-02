@@ -12,15 +12,15 @@ class ScreeningRepository
     public function add($screening)
     {
         $stmt = $this->pdo->prepare("
-            INSERT INTO screenings (movie_id, room_id, start_time, created_at, updated_at)
-            VALUES (:movie_id, :room_id, :start_time, :created_at, :updated_at)
+            INSERT INTO screenings (movie_id, room_id, start_time, created_at)
+            VALUES (:movie_id, :room_id, :start_time, :created_at)
         ");
         $stmt->execute([
             ':movie_id' => $screening->movie_id,
             ':room_id' => $screening->room_id,
             ':start_time' => $screening->start_time,
             ':created_at' => $screening->created_at,
-            ':updated_at' => $screening->updated_at
+
         ]);
     }
 
@@ -28,9 +28,10 @@ class ScreeningRepository
     {
         $stmt = $this->pdo->prepare("
             SELECT * FROM screenings 
-            WHERE room_id = :room_id AND start_time = :start_time
+            WHERE movie_id = :movie_id AND room_id = :room_id AND start_time = :start_time
         ");
         $stmt->execute([
+            ':movie_id' => $movie_id,
             ':room_id' => $room_id,
             ':start_time' => $start_time
         ]);

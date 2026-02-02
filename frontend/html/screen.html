@@ -4,11 +4,55 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="../index.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <title>Document</title>
 </head>
 
-<body>
+<header>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="index.html">My-Cinema</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
+                aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav">
+                    <li class="nav-item">
+                        <a class="nav-link" href="movies.html">Films</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="rooms.html">Salles</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="screen.html">Séances</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+</header>
 
+<body>
+    <div class="d-flex justify-content-center gap-3">
+        <table class="table table-striped mt-4" id="screeningsTable" border="1" cellspacing="0" cellpadding="5">
+            <thead>
+                <tr>
+                    <th>Film</th>
+                    <th>Salle</th>
+                    <th>Date & Heure</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Les séances seront ajoutées ici dynamiquement -->
+                <div id="list_screenings"></div>
+            </tbody>
+        </table>
+    </div>
+    <script type="module" src="../screen.js"></script>
 </body>
 
 </html>

@@ -2,7 +2,7 @@
 
 
 spl_autoload_register(function ($className) {
-    $folders = ['models', 'repositories', 'controllers', 'services', 'middlewares'];
+    $folders = ['models', 'repositories', 'controllers', 'services', 'middlewares', 'detail'];
 
     foreach ($folders as $folder) {
         $filePath = __DIR__ . DIRECTORY_SEPARATOR . $folder . DIRECTORY_SEPARATOR . $className . '.php';

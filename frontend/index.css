@@ -1,0 +1,9 @@
+textarea {
+    resize: none !important;
+    width: 100% !important;
+}
+
+body {
+    white-space: nowrap;
+    text-align: center !important;
+}

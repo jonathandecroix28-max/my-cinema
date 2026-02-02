@@ -17,7 +17,7 @@ class RoomController
     public function add()
     {
         $data = json_decode(file_get_contents('php://input'), true); // Pour les requêtes POST/PUT
-        if (!isset($data['name'], $data['capacity'], $data['type'], $data['active'])) {
+        if (!isset($data['name']) || !isset($data['capacity']) || !isset($data['type']) || !isset($data['active'])) {
             echo json_encode(["success" => false, "error" => "Données manquantes"]);
             return;
         }
@@ -33,7 +33,8 @@ class RoomController
             $this->repository->add($room);
             echo json_encode(["success" => true, "message" => "Salle ajoutée !"]);
         } catch (Exception $e) {
-            echo json_encode(["success" => false, "error" => "Erreur lors de l'ajout de la salle."]);
+            http_response_code(500);
+            echo json_encode(["success" => false, "error" => "Erreur DB: " . $e->getMessage()]);
         }
 
     }

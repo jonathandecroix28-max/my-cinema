@@ -35,13 +35,12 @@ class ScreeningService
         $screening->room_id = $room_id;
         $screening->start_time = $start_time;
         $screening->created_at = date('Y-m-d H:i:s');
-        $screening->updated_at = date('Y-m-d H:i:s');
 
         try {
             $this->screeningRepo->add($screening);
             return ["success" => true, "message" => "Séance ajoutée !"];
         } catch (Exception $e) {
-            return ["success" => false, "error" => "Erreur lors de l'ajout de la séance"];
+            return ["success" => false, "error" => $e->getMessage()];
         }
     }
 

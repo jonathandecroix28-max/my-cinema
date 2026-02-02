@@ -16,31 +16,38 @@ class MovieController
 
     public function add()
     {
-        $data = json_decode(file_get_contents('php://input'), true); // Pour les requêtes POST/PUT
+        $data = json_decode(file_get_contents('php://input'), true);
 
-        // vérifier que toutes les données obligatoires sont présentes
-        if (!isset($data['title'], $data['description'], $data['duration'], $data['release_year'], $data['genre'], $data['director'])) {
-            echo json_encode(["success" => false, "error" => "Données manquantes"]);
+        // Vérification : on s'assure que les champs critiques ne sont pas vides
+        if (empty($data['title']) || empty($data['description'])) {
+            echo json_encode(["success" => false, "error" => "Le titre et la description sont obligatoires"]);
             return;
         }
 
+        // Création de l'entité
         $movie = new Movie();
         $movie->title = $data['title'];
         $movie->description = $data['description'];
-        $movie->duration = $data['duration'];
-        $movie->release_year = $data['release_year'];
-        $movie->genre = $data['genre'];
-        $movie->director = $data['director'];
+        $movie->duration = $data['duration'] ?? null; // Utilise ?? null pour les champs facultatifs
+        // Au lieu de : $movie->release_year = $data['release_year'];
+// Fais ceci pour ne garder que les 4 premiers chiffres :
+        $movie->release_year = substr($data['release_year'], 0, 4);
+        $movie->genre = $data['genre'] ?? null;
+        $movie->director = $data['director'] ?? null;
         $movie->created_at = date('Y-m-d H:i:s');
         $movie->updated_at = date('Y-m-d H:i:s');
 
         try {
+            // C'est ici que la magie opère vers la Database
             $this->repository->add($movie);
-            echo json_encode(["success" => true, "message" => "Film ajouté !"]);
+            echo json_encode(["success" => true, "message" => "Film ajouté avec succès !"]);
         } catch (Exception $e) {
-            echo json_encode(["success" => false, "error" => "Erreur lors de l'ajout du film."]);
+            // En cas d'erreur (ex: problème de connexion SQL)
+            http_response_code(500);
+            echo json_encode(["success" => false, "error" => "Erreur DB : " . $e->getMessage()]);
         }
     }
+
 
     public function get()
     {

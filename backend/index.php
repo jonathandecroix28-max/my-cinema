@@ -1,7 +1,10 @@
 <?php
+
+session_start();
 // On affiche les erreurs pour voir ce qui se passer
 ini_set('display_errors', 1);
 error_reporting(E_ALL);
+header('Content-Type: application/json');
 require_once(__DIR__ . '/config/database.php');
 //echo "Le fichier index.php est lu par le serveur !";
 // Le chemin ABSOLU vers ton fichier de base de données
@@ -14,7 +17,14 @@ require_once __DIR__ . '/autoload.php';
 // récupérer le paramètre action
 $request = $_GET['action'] ?? '';
 
+
+
+
+
 switch ($request) {
+    case '': // action par défaut
+        echo json_encode(["message" => "Bienvenue dans l'API de My-Cinema"]);
+        break;
     case 'list_movies':
         $controller = new MovieController();
         $controller->list();
@@ -67,4 +77,4 @@ switch ($request) {
         echo json_encode(["error" => "Action non trouvée"]);
         break;
 }
-?>
+
