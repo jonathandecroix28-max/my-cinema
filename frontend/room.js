@@ -20,9 +20,12 @@ roomTable.innerHTML = `
     </thead>
     <tbody id="roomTableBody"></tbody>
 `;
-const roomTableBody = document.getElementById('roomTableBody')
+
+// ✅ CORRECTION : D'abord ajouter au DOM
 listScreenings.appendChild(roomTable);
 
+// ✅ PUIS récupérer l'élément
+const roomTableBody = document.getElementById('roomTableBody');
 
 // On vérifie que le corps du tableau existe avant de boucler
 if (roomTableBody) {
@@ -42,12 +45,12 @@ if (roomTableBody) {
             <td>${room.type}</td>
             <td>${room.active ? 'Oui' : 'Non'}</td>
             <td>
-                <button class="btn btn-danger delete-row-btn" data-id="${room.id}">Supprimer</button>
+                <button class="btn btn-danger delete-row-btn" data-id="${room.id}"><i class="bi bi-trash"></i> Supprimer</button>
                 <button class="btn btn-secondary btn-sm" disabled>Édition</button>
             </td>
         `;
         roomTableBody.appendChild(row);
-    }); // La boucle se finit ICI
+    });
 }
 
 const executeDelete = async (type, id, rowElement) => {
@@ -59,32 +62,36 @@ const executeDelete = async (type, id, rowElement) => {
     }
 };
 
-
-roomTableBody.addEventListener('click', async (e) => {
-    const btn = e.target.closest('.delete-row-btn');
-    if (btn) {
-        const roomId = btn.dataset.id;
-        if (confirm("Supprimer cette salle ?")) {
-            await executeDelete('room', roomId, btn.closest('tr'));
+// ✅ CORRECTION : Vérification avant addEventListener
+if (roomTableBody) {
+    roomTableBody.addEventListener('click', async (e) => {
+        const btn = e.target.closest('.delete-row-btn');
+        if (btn) {
+            const roomId = btn.dataset.id;
+            if (confirm("Supprimer cette salle ?")) {
+                await executeDelete('room', roomId, btn.closest('tr'));
+            }
         }
-    }
-});
+    });
+}
 
-formRoom.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const formData = new FormData(formRoom);
-    const data = {
-        name: formData.get('name'),
-        capacity: parseInt(formData.get('capacity'), 10)
-    };
-    try {
-        await apiPost('add_room', data);
-        alert('Salle ajoutée avec succès !');
-        location.reload();
-    } catch (error) {
-        alert(`Erreur lors de l'ajout de la salle : ${error.message}`);
-    }
-});
+// ✅ CORRECTION : Vérification du formulaire
+if (formRoom) {
+    formRoom.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const formData = new FormData(formRoom);
+        const data = {
+            name: formData.get('name'),
+            capacity: parseInt(formData.get('capacity'), 10)
+        };
+        try {
+            await apiPost('add_room', data);
+            alert('Salle ajoutée avec succès !');
+            location.reload();
+        } catch (error) {
+            alert(`Erreur lors de l'ajout de la salle : ${error.message}`);
+        }
+    });
+}
 
 console.log({ roomSelect, roomTableBody, formRoom });
-// Si l'un d'eux affiche "null" dans la console, c'est lui le coupable !

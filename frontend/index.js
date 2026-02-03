@@ -1,9 +1,9 @@
-
+/*
 console.log('Frontend loaded');
 
 import { apiFetch, formatDate, apiDelete, truncateText, apiPost } from './config.js';
 
-/*const movieSelect = document.getElementById('movieSelect');
+const movieSelect = document.getElementById('movieSelect');
 const roomSelect = document.getElementById('roomSelect');
 const stockScreening = document.getElementById('stockScreening');
 const stockMovie = document.getElementById('stockMovie');
@@ -15,7 +15,7 @@ const listScreenings = document.getElementById('screeningsList');
 
 const screenings = await fetch(`${API_BASE_URL}?action=list_screenings`).then(res => res.json());
 const movies = await fetch(`${API_BASE_URL}?action=list_movies`).then(res => res.json());
-const rooms = await fetch(`${API_BASE_URL}?action=list_rooms`).then(res => res.json());*/
+const rooms = await fetch(`${API_BASE_URL}?action=list_rooms`).then(res => res.json());
 
 import { els } from './dom-elements.js';
 
@@ -268,7 +268,7 @@ form.addEventListener('submit', async (e) => {
     } catch (err) {
         alert("Erreur lors de la création de la séance : " + err.message);
     }
-});
+}); */
 
 
 const title = document.getElementById('titre');
