@@ -38,18 +38,27 @@ CREATE TABLE IF NOT EXISTS screenings (
     FOREIGN KEY (room_id) REFERENCES rooms(id) ON DELETE CASCADE
 );
 
-CREATE TABLE IF NOT EXISTS users (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    email VARCHAR(255) UNIQUE NOT NULL,
-    password VARCHAR(255) NOT NULL,
-    role ENUM('admin', 'user') NOT NULL DEFAULT 'user'
-);
-CREATE TABLE IF NOT EXISTS reservations (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    screening_id INT NOT NULL,
-    user_id INT NOT NULL,
-    seats_reserved INT NOT NULL,
-    reservation_time DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (screening_id) REFERENCES screenings(id) ON DELETE CASCADE,
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-);
+
+/*
+UPDATE screenings 
+SET room_id = 1 
+WHERE room_id NOT IN (SELECT id FROM rooms);
+
+-- 1. Fix the Parent Tables first
+ALTER TABLE movies MODIFY id INT UNSIGNED AUTO_INCREMENT;
+ALTER TABLE rooms MODIFY id INT UNSIGNED AUTO_INCREMENT;
+
+-- 2. Ensure the Screening columns match the parent type exactly
+ALTER TABLE screenings 
+    MODIFY movie_id INT UNSIGNED NOT NULL,
+    MODIFY room_id INT UNSIGNED NOT NULL;
+
+-- 3. Now apply the Foreign Key constraints
+ALTER TABLE screenings
+ADD CONSTRAINT fk_screenings_movie
+    FOREIGN KEY (movie_id) REFERENCES movies(id)
+    ON DELETE CASCADE,
+ADD CONSTRAINT fk_screenings_room
+    FOREIGN KEY (room_id) REFERENCES rooms(id)
+    ON DELETE CASCADE;*/
+

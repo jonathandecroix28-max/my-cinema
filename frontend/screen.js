@@ -1,4 +1,4 @@
-const session = document.getElementById('list_screenings');
+/*const session = document.getElementById('list_screenings');
 import { API_BASE_URL } from './config.js';
 const screenings = await fetch(`${API_BASE_URL}?action=list_screenings`).then(res => res.json())
 const movies = await fetch(`${API_BASE_URL}?action=list_movies`).then(res => res.json());
@@ -14,10 +14,13 @@ const displayRoom = (room_id) => {
 screenings.forEach(screening => {
     const row = document.createElement('tr');
     row.innerHTML = `
-        <td>${screening.id}</td>
         <td>${displayMovie(screening.movie_id)}</td>
         <td>${displayRoom(screening.room_id)}</td>
         <td>${screening.start_time}</td>
     `;
     session.appendChild(row);
-})
+})*/
+
+import { els } from './dom-elements.js';
+import { apiFetch, formatDate, truncateText, apiDelete } from './config.js';
+

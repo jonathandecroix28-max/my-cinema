@@ -48,5 +48,19 @@ class ScreeningService
     {
         return $this->screeningRepo->getAll();
     }
+
+    public function deleteScreening($id)
+    {
+        if (!$this->screeningRepo->exists($id)) {
+            return ["success" => false, "error" => "La séance n'existe pas"];
+        }
+
+        try {
+            $this->screeningRepo->delete($id);
+            return ["success" => true, "message" => "Séance supprimée !"];
+        } catch (Exception $e) {
+            return ["success" => false, "error" => $e->getMessage()];
+        }
+    }
 }
 ?>

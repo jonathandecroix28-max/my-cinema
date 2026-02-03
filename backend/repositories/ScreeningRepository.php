@@ -43,5 +43,17 @@ class ScreeningRepository
         $stmt = $this->pdo->query("SELECT * FROM screenings");
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
+
+    public function delete($id)
+    {
+        $stmt = $this->pdo->prepare("DELETE FROM screenings WHERE id = :id");
+        $stmt->execute([':id' => $id]);
+    }
+    public function exists($id)
+    {
+        $stmt = $this->pdo->prepare("SELECT * FROM screenings WHERE id = :id");
+        $stmt->execute([':id' => $id]);
+        return $stmt->fetch(PDO::FETCH_ASSOC) ? true : false;
+    }
 }
 ?>

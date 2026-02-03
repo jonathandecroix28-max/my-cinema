@@ -30,5 +30,19 @@ class ScreeningController
 
         echo json_encode($result);
     }
+
+    public function remove()
+    {
+        $id = $_GET['id'] ?? null;
+
+        if (!$id) {
+            echo json_encode(["success" => false, "error" => "ID manquant"]);
+            return;
+        }
+
+        $result = $this->service->deleteScreening($id);
+        echo json_encode($result);
+    }
+
 }
 ?>

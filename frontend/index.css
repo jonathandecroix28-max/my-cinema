@@ -7,3 +7,14 @@ body {
     white-space: nowrap;
     text-align: center !important;
 }
+
+#selectsContainer {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+#selectsContainer select {
+    max-width: 200px;
+}

@@ -1,9 +1,9 @@
 
 console.log('Frontend loaded');
 
-import { API_BASE_URL } from './config.js';
+import { apiFetch, formatDate, apiDelete, truncateText, apiPost } from './config.js';
 
-const movieSelect = document.getElementById('movieSelect');
+/*const movieSelect = document.getElementById('movieSelect');
 const roomSelect = document.getElementById('roomSelect');
 const stockScreening = document.getElementById('stockScreening');
 const stockMovie = document.getElementById('stockMovie');
@@ -13,11 +13,29 @@ const formMovie = document.getElementById('addMovieForm');
 const formRoom = document.getElementById('addRoomForm');
 const listScreenings = document.getElementById('screeningsList');
 
-// 1. On récupère les films et les salles
+const screenings = await fetch(`${API_BASE_URL}?action=list_screenings`).then(res => res.json());
 const movies = await fetch(`${API_BASE_URL}?action=list_movies`).then(res => res.json());
-const rooms = await fetch(`${API_BASE_URL}?action=list_rooms`).then(res => res.json());
+const rooms = await fetch(`${API_BASE_URL}?action=list_rooms`).then(res => res.json());*/
 
-// 1. On crée la structure du tableau une seule fois
+import { els } from './dom-elements.js';
+
+const {
+    movieSelect,
+    roomSelect,
+    form,
+    stockScreening,
+    stockMovie,
+    stockRoom,
+    formMovie,
+    formRoom,
+    listScreenings
+} = els;
+
+const screenings = await apiFetch('list_screenings');
+const movies = await apiFetch('list_movies');
+const rooms = await apiFetch('list_rooms');
+
+
 const movieTable = document.createElement('table');
 movieTable.className = 'table table-bordered table-striped mt-4';
 movieTable.innerHTML = `
@@ -37,58 +55,61 @@ listScreenings.appendChild(movieTable);
 
 const movieTableBody = document.getElementById('movieTableBody');
 
-// 2. On remplit le tableau et le select
+
 movies.forEach(movie => {
-    // Remplissage du select
+
     const option = new Option(movie.title, movie.id);
     movieSelect.appendChild(option);
 
-    // Ajout de la ligne dans le tableau
+
     const tr = document.createElement('tr');
     tr.innerHTML = `
         <td>${movie.id}</td>
         <td>${movie.title}</td>
-        <td>${movie.description.substring(0, 30)}...</td>
+        <td>${truncateText(movie.description)}</td>
         <td>${movie.duration} min</td>
         <td>${movie.genre}</td>
         <td>
             <button class="btn btn-danger btn-sm delete-row-btn" data-id="${movie.id}">
                 <i class="bi bi-trash"></i>
             </button>
+            <button class="btn btn-secondary btn-sm mt-2" disabled>
+                <i class="bi bi-pencil"></i> Édition non disponible
+            </button>
         </td>
     `;
     movieTableBody.appendChild(tr);
 });
 
-// 3. Gestionnaire de clic UNIQUE (Délégation d'événement)
+
 movieTableBody.addEventListener('click', async (e) => {
     const btn = e.target.closest('.delete-row-btn');
-    if (!btn) return;
-
-    const movieId = btn.dataset.id;
-    if (confirm("Supprimer ce film ?")) {
-        await executeDelete('movie', movieId, btn.closest('tr'));
+    if (btn) {
+        const movieId = btn.dataset.id;
+        if (confirm("Supprimer ce film ?")) {
+            await executeDelete('movie', movieId, btn.closest('tr'));
+        }
     }
 });
 
-async function executeDelete(type, id, elementToRemove = null) {
+async function executeDelete(type, id, elementToRemove) {
     try {
-        const res = await fetch(`${API_BASE_URL}?action=delete_${type}&id=${id}`, {
-            method: 'DELETE' // Ou POST si ton backend est configuré ainsi
-        });
-        const data = await res.json();
+        // On utilise l'utilitaire importé depuis config.js
+        const data = await apiDelete(type, id);
 
         if (data.success) {
             alert(`${type} supprimé !`);
-            if (elementToRemove) elementToRemove.remove(); // Supprime la ligne du tableau
-            // On retire aussi du select
+            // Suppression visuelle immédiate (plus besoin de location.reload !)
+            if (elementToRemove) elementToRemove.remove();
+
+            // Supprime l'option dans les menus déroulants si elle existe
             const option = document.querySelector(`select option[value="${id}"]`);
             if (option) option.remove();
         } else {
             alert(data.error);
         }
     } catch (err) {
-        alert("Erreur de connexion au serveur");
+        alert("Erreur : Impossible de supprimer cet élément (il est peut-être lié à une autre donnée).");
     }
 }
 
@@ -129,6 +150,9 @@ rooms.forEach(room => {
             <button class="btn btn-danger btn-sm delete-row-btn" data-id="${room.id}">
                 <i class="bi bi-trash"></i>
             </button>
+            <button class="btn btn-secondary btn-sm mt-2" disabled>
+                <i class="bi bi-pencil"></i> Édition non disponible
+            </button>
         </td>
     `;
     roomTableBody.appendChild(tr);
@@ -136,194 +160,125 @@ rooms.forEach(room => {
 
 roomTableBody.addEventListener('click', async (e) => {
     const btn = e.target.closest('.delete-row-btn');
+    if (btn) {
+        const roomId = btn.dataset.id;
+        if (confirm("Supprimer cette salle ?")) {
+            await executeDelete('room', roomId, btn.closest('tr'));
+        }
+    }
+});
+
+screenings.forEach(screening => {
+    const div = document.createElement('div');
+    div.className = 'border p-3';
+    div.innerHTML = `
+        <strong>Séance ID:</strong> ${screening.id} <br/>
+        <strong>Film ID:</strong> ${screening.movie_id} <br/>
+        <strong>Salle ID:</strong> ${screening.room_id} <br/>
+        <strong>Heure de début:</strong> ${formatDate(screening.start_time)} <br/>
+        <button class="btn btn-danger btn-sm delete-row-btn" data-id="${screening.id}">
+            <i class="bi bi-trash"></i> Supprimer la séance
+        </button>
+        <button class="btn btn-secondary btn-sm mt-2" disabled>
+            <i class="bi bi-pencil"></i> Édition non disponible
+        </button>
+    `;
+    listScreenings.appendChild(div);
+});
+
+listScreenings.addEventListener('click', async (e) => {
+    const btn = e.target.closest('.delete-row-btn');
     if (!btn) return;
 
-    const roomId = btn.dataset.id;
-    if (confirm("Supprimer cette salle ?")) {
-        await executeDelete('room', roomId, btn.closest('tr'));
+
+
+    const screeningId = btn.dataset.id;
+    if (confirm("Supprimer cette séance ?")) {
+        await executeDelete('screening', screeningId, btn.closest('div'));
+        location.reload();
     }
 });
 
 
-
-
 stockRoom.appendChild(document.createTextNode(`Salle${rooms.length > 1 ? 's' : ''} en stock: ${rooms.length} 🏟️`));
 stockMovie.appendChild(document.createTextNode(`Film${movies.length > 1 ? 's' : ''} en stock: ${movies.length} 🎬`));
-stockScreening.appendChild(document.createTextNode(`Séance${rooms.length > 1 ? 's' : ''} planifiée${rooms.length > 1 ? 's' : ''} : ${rooms.length * movies.length} 🎟️`));
-/*const pluralMovie = document.createElement('span');
-const bouttons = document.createElement('button');
-const icon = document.createElement('i');
-icon.className = 'bi bi-trash3-fill';
-bouttons.className = 'btn btn-sm btn-danger ms-3';
-bouttons.appendChild(icon);
-bouttons.type = 'button';
-stockRoom.appendChild(document.createTextNode(`Salle${rooms.length > 1 ? 's' : ''} en stock: ${rooms.length} 🏟️`));
-//stockRoom.appendChild(boutton);
-pluralMovie.textContent = movies.length > 1 ? 's' : '';
-stockMovie.appendChild(document.createTextNode(`Film${pluralMovie.textContent} en stock: ${movies.length} 🎬`));
-stockScreening.appendChild(document.createTextNode(`Séance${rooms.length > 1 ? 's' : ''} planifiée${rooms.length > 1 ? 's' : ''} : ${rooms.length * movies.length} 🎟️`));
-//stockScreening.appendChild(boutton);
-//stockMovie.appendChild(boutton);
-bouttons.forEach(btn => {
-
-    stockMovie.appendChild(btn);
-    stockRoom.appendChild(btn);
-    stockScreening.appendChild(btn);
-    btn.addEventListener('click', () => {
-        alert('Fonctionnalité non implémentée');
-    });
-});*/
+stockScreening.appendChild(document.createTextNode(`Séance${screenings.length > 1 ? 's' : ''} planifiée${screenings.length > 1 ? 's' : ''} : ${screenings.length} 🎟️`));
 
 
 
 formRoom.addEventListener('submit', async (e) => {
     e.preventDefault();
 
-    // 1. On récupère les éléments
-    const name = document.getElementById('nameRoom').value;
-    const capacity = document.getElementById("capacity").value;
-    const typeElement = document.getElementById('typeRoom');
-    const activeElement = document.getElementById('activeRoom');
+    // On récupère les valeurs
+    const roomData = {
+        name: document.getElementById('nameRoom').value,
+        capacity: document.getElementById("capacity").value,
+        type: document.getElementById('typeRoom').value,
+        active: document.getElementById('activeRoom').value
+    };
 
-    // 2. On extrait les valeurs
-    const type = typeElement.value;
-    const active = activeElement.value;
-
-    const res = await fetch(`${API_BASE_URL}?action=add_room`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-            name,
-            capacity,
-            type,
-            active
-        })
-    });
-
-    const data = await res.json();
-
-    if (!res.ok) {
-        alert(data.error || 'Erreur lors de l\'ajout');
-        return;
+    try {
+        // Un seul appel propre !
+        await apiPost('add_room', roomData);
+        alert('Salle ajoutée 🎬');
+        location.reload();
+    } catch (err) {
+        alert(err.message);
     }
-    location.reload();
-    formRoom.reset();
-    alert('Salle ajoutée 🎬');
 });
 
 formMovie.addEventListener('submit', async (e) => {
     e.preventDefault();
-    const title = document.getElementById('movieTitle').value;
-    const description = document.getElementById("movieSummary").value;
-    const duration = document.getElementById('movieDuration').value;
-    const genre = document.getElementById('movieGenre').value;
-    const director = document.getElementById('movieDirector').value;
-    const release_year = document.getElementById('movieReleaseYear').value;
 
-    const res = await fetch(`${API_BASE_URL}?action=add_movie`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-            title,
-            description,
-            duration,
-            genre,
-            director,
-            release_year
-        })
-    });
+    // On prépare l'objet avec les données du formulaire
+    const movieData = {
+        title: document.getElementById('movieTitle').value,
+        description: document.getElementById("movieSummary").value,
+        duration: document.getElementById('movieDuration').value,
+        genre: document.getElementById('movieGenre').value,
+        director: document.getElementById('movieDirector').value,
+        release_year: document.getElementById('movieReleaseYear').value
+    };
 
-    const data = await res.json();
-
-    if (!res.ok) {
-        alert(data.error);
-        return;
+    try {
+        // On utilise notre nouvel outil apiPost
+        await apiPost('add_movie', movieData);
+        alert('Film ajouté 🎬');
+        location.reload();
+    } catch (err) {
+        alert("Erreur lors de l'ajout : " + err.message);
     }
-    location.reload();
-    formMovie.reset();
-    alert('Film ajouté 🎬');
 });
-
 
 
 
 form.addEventListener('submit', async (e) => {
     e.preventDefault();
-    const movie_id = movieSelect.value;
-    const room_id = roomSelect.value;
-    const start_time = document.getElementById('startTime').value;
 
-    const res = await fetch(`${API_BASE_URL}?action=add_screening`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-            movie_id,
-            room_id,
-            start_time
-        })
-    });
+    const screeningData = {
+        movie_id: movieSelect.value,
+        room_id: roomSelect.value,
+        start_time: document.getElementById('startTime').value
+    };
 
-    const data = await res.json();
-
-    if (!res.ok) {
-        alert(data.error);
-        return;
+    try {
+        await apiPost('add_screening', screeningData);
+        alert('Séance créée 🎬');
+        location.reload();
+    } catch (err) {
+        alert("Erreur lors de la création de la séance : " + err.message);
     }
-    alert('Séance créée 🎬');
 });
 
 
-
-/*async function loadData() {
-    const moviesRes = await fetch("index.php?action=list_movies");
-    const movies = await moviesRes.json();
-    console.log(movies);
-
-    const roomsRes = await fetch("index.php?action=list_rooms");
-    const rooms = await roomsRes.json();
-    console.log(rooms);
-}
-
-loadData();
-async function addScreening() {
-    const res = await fetch('index.php?action=add_screening', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-            movie_id: 3,
-            room_id: 1,
-            start_time: '2026-02-01 18:00:00'
-        })
-    });
-
-    const data = await res.json();
-
-    if (!res.ok) {
-        alert(data.error);
-        return;
-    }
-
-    alert('Séance créée 🎬');
-}
-addScreening();*/
-
-
-/*fetch('index.php?action=add_screening', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-        movie_id: 1,
-        room_id: 1,
-        start_time: '2026-02-01 18:00:00'
-    })
-})
-    .then(res => res.json())
-    .then(data => console.log(data)); */
+const title = document.getElementById('titre');
+setInterval(() => {
+    const now = new Date();
+    title.innerText = `Gestion des Séances, Films et Salles - ${now.toLocaleDateString()} ${now.toLocaleTimeString()}`;
+}, 1000);
+setInterval(() => {
+    title.style.textShadow = "0 0 60px rgba(90, 125, 223, 0.8)";
+    setTimeout(() => {
+        title.style.textShadow = "none";
+    }, 500);
+}, 1000);
