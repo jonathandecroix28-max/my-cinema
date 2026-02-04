@@ -274,7 +274,7 @@ form.addEventListener('submit', async (e) => {
 const title = document.getElementById('titre');
 setInterval(() => {
     const now = new Date();
-    title.innerText = `Gestion des Séances, Films et Salles - ${now.toLocaleDateString()} ${now.toLocaleTimeString()}`;
+    title.innerText = `${now.toLocaleDateString()} ${now.toLocaleTimeString()}`;
 }, 1000);
 setInterval(() => {
     title.style.textShadow = "0 0 60px rgba(90, 125, 223, 0.8)";

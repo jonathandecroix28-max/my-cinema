@@ -62,5 +62,34 @@ class ScreeningService
             return ["success" => false, "error" => $e->getMessage()];
         }
     }
+
+    public function updateScreening($id, $movie_id, $room_id, $start_time)
+    {
+        if (!$this->screeningRepo->exists($id)) {
+            return ["success" => false, "error" => "La séance n'existe pas"];
+        }
+
+        // Vérification film
+        if (!$this->movieRepo->exists($movie_id)) {
+            return ["success" => false, "error" => "Le film n'existe pas"];
+        }
+
+        // Vérification salle
+        if (!$this->roomRepo->exists($room_id)) {
+            return ["success" => false, "error" => "La salle n'existe pas"];
+        }
+
+        // Conflits
+        if ($this->screeningRepo->checkConflicts($movie_id, $room_id, $start_time)) {
+            return ["success" => false, "error" => "Conflit avec une séance existante"];
+        }
+
+        try {
+            $this->screeningRepo->update($id, $movie_id, $room_id, $start_time);
+            return ["success" => true, "message" => "Séance mise à jour !"];
+        } catch (Exception $e) {
+            return ["success" => false, "error" => $e->getMessage()];
+        }
+    }
 }
 ?>

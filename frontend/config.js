@@ -1,6 +1,7 @@
 //mon url de base pour les appels API
 export const API_BASE_URL = '/my-cinema/backend/index.php';
 
+
 // appel simplémentés fréquemment, pour éviter de répéter le code
 
 // 1. Fonction d'appel API générique
@@ -45,3 +46,12 @@ export const apiDelete = async (type, id) => {
         method: 'DELETE'
     });
 };
+export const apiPut = async (type, id, data) => {
+    return await apiFetch(`update_${type}&id=${id}`, {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(data)
+    });
+}

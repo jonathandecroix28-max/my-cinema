@@ -1,7 +1,7 @@
 import { els } from './dom-elements.js';
 import { apiFetch, apiDelete, apiPost } from './config.js';
 
-const { roomSelect, formRoom, listScreenings } = els;
+const { roomSelect, formRoom, listScreenings, stockRoom } = els;
 
 const rooms = await apiFetch('list_rooms');
 
@@ -21,14 +21,16 @@ roomTable.innerHTML = `
     <tbody id="roomTableBody"></tbody>
 `;
 
-// ✅ CORRECTION : D'abord ajouter au DOM
-listScreenings.appendChild(roomTable);
+// ✅ D'abord ajouter au DOM
+if (listScreenings) {
+    listScreenings.appendChild(roomTable);
+}
 
 // ✅ PUIS récupérer l'élément
 const roomTableBody = document.getElementById('roomTableBody');
 
-// On vérifie que le corps du tableau existe avant de boucler
-if (roomTableBody) {
+// Remplir le tableau et le select
+if (roomTableBody && rooms.length > 0) {
     rooms.forEach(room => {
         // 1. Remplir le select (si il existe sur cette page)
         if (roomSelect) {
@@ -36,7 +38,7 @@ if (roomTableBody) {
             roomSelect.appendChild(option);
         }
 
-        // 2. Créer la ligne du tableau (DANS la boucle !)
+        // 2. Créer la ligne du tableau
         const row = document.createElement('tr');
         row.innerHTML = `
             <td>${room.id}</td>
@@ -45,24 +47,41 @@ if (roomTableBody) {
             <td>${room.type}</td>
             <td>${room.active ? 'Oui' : 'Non'}</td>
             <td>
-                <button class="btn btn-danger delete-row-btn" data-id="${room.id}"><i class="bi bi-trash"></i> Supprimer</button>
-                <button class="btn btn-secondary btn-sm" disabled>Édition</button>
+                <button class="btn btn-danger btn-sm delete-row-btn" data-id="${room.id}">
+                    <i class="bi bi-trash"></i>
+                </button>
+                <button class="btn btn-secondary btn-sm" disabled>
+                    <i class="bi bi-pencil"></i>
+                </button>
             </td>
         `;
         roomTableBody.appendChild(row);
     });
 }
 
+// Fonction de suppression
 const executeDelete = async (type, id, rowElement) => {
     try {
-        await apiDelete(type, id);
-        rowElement.remove();
+        const result = await apiDelete(type, id);
+
+        if (result.success) {
+            alert(`${type} supprimé !`);
+            rowElement.remove();
+
+            // Supprimer du select aussi
+            if (roomSelect) {
+                const option = roomSelect.querySelector(`option[value="${id}"]`);
+                if (option) option.remove();
+            }
+        } else {
+            alert(result.error || 'Erreur lors de la suppression');
+        }
     } catch (error) {
         alert(`Erreur lors de la suppression : ${error.message}`);
     }
 };
 
-// ✅ CORRECTION : Vérification avant addEventListener
+// ✅ Gestionnaire de suppression avec vérification
 if (roomTableBody) {
     roomTableBody.addEventListener('click', async (e) => {
         const btn = e.target.closest('.delete-row-btn');
@@ -75,23 +94,52 @@ if (roomTableBody) {
     });
 }
 
-// ✅ CORRECTION : Vérification du formulaire
+// ✅ Formulaire d'ajout CORRIGÉ
 if (formRoom) {
     formRoom.addEventListener('submit', async (e) => {
         e.preventDefault();
-        const formData = new FormData(formRoom);
+
+        // ✅ CORRECTION : Récupérer les bonnes valeurs par ID
         const data = {
-            name: formData.get('name'),
-            capacity: parseInt(formData.get('capacity'), 10)
+            name: document.getElementById('nameRoom').value,
+            capacity: parseInt(document.getElementById('capacity').value, 10),
+            type: document.getElementById('typeRoom').value,
+            active: parseInt(document.getElementById('activeRoom').value, 10)
         };
+
+        // Validation
+        if (!data.name || !data.capacity || data.capacity <= 0) {
+            alert('Veuillez remplir tous les champs correctement');
+            return;
+        }
+
+        console.log('Données envoyées:', data);
+
         try {
-            await apiPost('add_room', data);
-            alert('Salle ajoutée avec succès !');
-            location.reload();
+            const result = await apiPost('add_room', data);
+            console.log('Réponse du serveur:', result);
+
+            if (result.success) {
+                alert('Salle ajoutée avec succès ! 🏟️');
+                location.reload();
+            } else {
+                alert(`Erreur : ${result.error || 'Erreur inconnue'}`);
+            }
         } catch (error) {
+            console.error('Erreur complète:', error);
             alert(`Erreur lors de l'ajout de la salle : ${error.message}`);
         }
     });
 }
 
-console.log({ roomSelect, roomTableBody, formRoom });
+// Afficher le compteur
+if (stockRoom) {
+    stockRoom.textContent = `Salle${rooms.length > 1 ? 's' : ''} en stock: ${rooms.length} 🏟️`;
+}
+
+console.log('✅ room.js chargé', {
+    roomSelect,
+    roomTableBody,
+    formRoom,
+    rooms: rooms.length
+});

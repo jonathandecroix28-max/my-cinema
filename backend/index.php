@@ -77,6 +77,10 @@ switch ($request) {
         $controller = new ScreeningController();
         $controller->remove();
         break;
+    case 'update_screening':
+        $controller = new ScreeningController();
+        $controller->update();
+        break;
     default:
         echo json_encode(["error" => "Action non trouvée"]);
         break;
