@@ -1,12 +1,7 @@
 // ✅ Les imports DOIVENT être en premier
 import { apiFetch, formatDate, apiDelete, apiPost, apiPut } from './config.js';
 import { els } from './dom-elements.js';
-import { arrowPages } from './dom-elements.js';
-import { allFunctions } from './pagination.js';
-const { nextPage, prevPage, goToPage, getPageInfo, isFirstPage, isLastPage, getPaginatedItems, disableButton, enableButton } = allFunctions;
-const { btnPrev, btnNext, pageInfo } = arrowPages;
-let currentPage = 1;
-const itemsPerPage = 5;
+
 
 // Récupération des éléments DOM
 const { listScreenings, movieSelect, roomSelect, screeningForm, stockScreening } = els;

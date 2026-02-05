@@ -24,29 +24,29 @@ roomTable.innerHTML = `
 // ✅ D'abord ajouter au DOM
 if (listScreenings) {
     listScreenings.appendChild(roomTable);
-};
+}
 
 // ✅ PUIS récupérer l'élément
 const roomTableBody = document.getElementById('roomTableBody');
 
 const createRoomRow = (room) => {
     const tr = document.createElement("tr");
-    tr.dataset.id = room.id
+    tr.dataset.id = room.id;
     tr.innerHTML = `
-            <td class="room-id">${room.id}</td>
-            <td class="room-name">${room.name}</td>
-            <td class="room-capacity">${room.capacity}</td>
-            <td class="room-type">${room.type}</td>
-            <td class="room-active">${room.active ? 'Oui' : 'Non'}</td>
-            <td class="actions">
-                <button class="btn btn-danger btn-sm delete-row-btn" data-id="${room.id}">
-                    <i class="bi bi-trash"></i>
-                </button>
-                <button class="btn btn-warning btn-sm edit-row-btn" data-id="${room.id}">
-                    <i class="bi bi-pencil"></i> Modifier
-                </button>
-            </td>
-        `;
+        <td class="room-id">${room.id}</td>
+        <td class="room-name">${room.name}</td>
+        <td class="room-capacity">${room.capacity}</td>
+        <td class="room-type">${room.type}</td>
+        <td class="room-active">${room.active ? 'Oui' : 'Non'}</td>
+        <td class="actions">
+            <button class="btn btn-danger btn-sm delete-row-btn" data-id="${room.id}">
+                <i class="bi bi-trash"></i>
+            </button>
+            <button class="btn btn-warning btn-sm edit-row-btn" data-id="${room.id}">
+                <i class="bi bi-pencil"></i> Modifier
+            </button>
+        </td>
+    `;
     return tr;
 };
 
@@ -61,27 +61,30 @@ if (roomTableBody && rooms.length > 0) {
 
         roomTableBody.appendChild(createRoomRow(room));
     });
-};
+}
 
 const enableEditMode = (row) => {
     const roomId = row.dataset.id;
-    const room = rooms.find(r => r.id == roomId)
+    const room = rooms.find(r => r.id == roomId);
     if (!room) return;
 
     row.classList.add('editing-mode');
 
     row.querySelector(".room-name").innerHTML = `<input type="text" class="inline-input" value="${room.name}" data-field="name">`;
 
-    row.querySelector(".room-capacity").innerHTML = `<input type="text" class="inline-input" value="${room.capacity}" data-field="capacity">`
-    row.querySelector(".room-type").innerHTML = `<select class="inline-input" data-field="type">
-    <option value="2D"${room.type === '2D' ? ' selected' : ''}>2D</option>
-    <option value="3D"${room.type === '3D' ? ' selected' : ''}>3D</option>
-    <option value="IMAX"${room.type === 'IMAX' ? ' selected' : ''}>IMAX</option>
-                            </select>`
-    row.querySelector(".room-active").innerHTML = `<select class="inline-input" data-field="active">
-    <option value="1"${room.active == 1 ? ' selected' : ''}>Oui</option>
-                                <option value="0"${room.active == 0 ? ' selected' : ''}>Non</option>
-                            </select> `;
+    row.querySelector(".room-capacity").innerHTML = `<input type="number" class="inline-input" value="${room.capacity}" data-field="capacity">`;
+
+    row.querySelector(".room-type").innerHTML = `<select class="inline-select" data-field="type">
+        <option value="2D"${room.type === '2D' ? ' selected' : ''}>2D</option>
+        <option value="3D"${room.type === '3D' ? ' selected' : ''}>3D</option>
+        <option value="IMAX"${room.type === 'IMAX' ? ' selected' : ''}>IMAX</option>
+    </select>`;
+
+    row.querySelector(".room-active").innerHTML = `<select class="inline-select" data-field="active">
+        <option value="1"${room.active == 1 ? ' selected' : ''}>Oui</option>
+        <option value="0"${room.active == 0 ? ' selected' : ''}>Non</option>
+    </select>`;
+
     row.querySelector('.actions').innerHTML = `
         <button class="btn btn-success btn-sm save-row-btn" data-id="${room.id}">
             <i class="bi bi-check-lg"></i> Sauvegarder
@@ -97,21 +100,22 @@ const saveRoom = async (row) => {
 
     const roomData = {
         name: row.querySelector('[data-field="name"]').value,
-        capacity: row.querySelector('[data-field="capacity"').value,
+        capacity: parseInt(row.querySelector('[data-field="capacity"]').value, 10), // ✅ CORRIGÉ
         type: row.querySelector('[data-field="type"]').value,
-        active: row.querySelector('[data-field="active"]').value
-    }
+        active: parseInt(row.querySelector('[data-field="active"]').value, 10)
+    };
+
     if (!roomData.name || !roomData.capacity) {
-        alert('Veillez indiquer le name et l\'espace disponible');
+        alert('Veuillez indiquer le nom et la capacité');
         return;
     }
 
     try {
         const result = await apiPut('room', roomId, roomData);
         if (result.success) {
-            alert('Salle modifié avec succès !')
+            alert('Salle modifiée avec succès !');
 
-            const roomIndex = rooms.findIndex(r => r.id = roomId);
+            const roomIndex = rooms.findIndex(r => r.id == roomId); // ✅ CORRIGÉ == au lieu de =
             if (roomIndex !== -1) {
                 rooms[roomIndex] = { ...rooms[roomIndex], ...roomData };
             }
@@ -121,15 +125,14 @@ const saveRoom = async (row) => {
         } else {
             alert(`Erreur : ${result.error || 'Erreur inconnue'}`);
         }
-    }
-    catch {
+    } catch (error) { // ✅ CORRIGÉ : Ajout du paramètre error
         alert(`Erreur : ${error.message}`);
     }
 };
 
 const cancelEdit = (row) => {
     const roomId = row.dataset.id;
-    const room = rooms.find(m => m.id = roomId);
+    const room = rooms.find(r => r.id == roomId); // ✅ CORRIGÉ == au lieu de =
 
     if (room) {
         const newRow = createRoomRow(room);
@@ -146,6 +149,12 @@ const executeDelete = async (type, id, rowElement) => {
             alert(`${type} supprimé !`);
             rowElement.remove();
 
+            // Supprimer du tableau rooms
+            const index = rooms.findIndex(r => r.id == id);
+            if (index !== -1) {
+                rooms.splice(index, 1);
+            }
+
             // Supprimer du select aussi
             if (roomSelect) {
                 const option = roomSelect.querySelector(`option[value="${id}"]`);
@@ -159,34 +168,28 @@ const executeDelete = async (type, id, rowElement) => {
     }
 };
 
-// ✅ Gestionnaire de suppression avec vérification
-if (roomTableBody) {
-    roomTableBody.addEventListener('click', async (e) => {
-        const btn = e.target.closest('.delete-row-btn');
-        if (btn) {
-            const roomId = btn.dataset.id;
-            if (confirm("Supprimer cette salle ?")) {
-                await executeDelete('room', roomId, btn.closest('tr'));
-            }
-        }
-    });
-}
-
+// ✅ UN SEUL GESTIONNAIRE D'ÉVÉNEMENTS (lignes 163-173 SUPPRIMÉES)
 if (roomTableBody) {
     roomTableBody.addEventListener('click', async (e) => {
         const row = e.target.closest('tr');
         if (!row) return;
+
+        // 🗑️ Suppression
         if (e.target.closest('.delete-row-btn')) {
             const roomId = e.target.closest('.delete-row-btn').dataset.id;
             if (confirm("Supprimer cette salle ?")) {
-                await executeDelete('room', roomId, row)
-            } return;
+                await executeDelete('room', roomId, row);
+            }
+            return;
         }
+
+        // ✏️ Édition
         if (e.target.closest('.edit-row-btn')) {
             enableEditMode(row);
             return;
         }
 
+        // 💾 Sauvegarde
         if (e.target.closest('.save-row-btn')) {
             await saveRoom(row);
             return;
@@ -197,15 +200,14 @@ if (roomTableBody) {
             cancelEdit(row);
             return;
         }
-    })
+    });
 }
 
-// ✅ Formulaire d'ajout CORRIGÉ
+// ✅ Formulaire d'ajout
 if (formRoom) {
     formRoom.addEventListener('submit', async (e) => {
         e.preventDefault();
 
-        // ✅ CORRECTION : Récupérer les bonnes valeurs par ID
         const data = {
             name: document.getElementById('nameRoom').value,
             capacity: parseInt(document.getElementById('capacity').value, 10),
@@ -249,4 +251,3 @@ console.log('✅ room.js chargé', {
     formRoom,
     rooms: rooms.length
 });
-

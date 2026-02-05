@@ -9,7 +9,7 @@ class MovieRepository
     }
     public function getAll()
     {
-        $stmt = $this->pdo->query(" SELECT * FROM movies WHERE deleted_at IS NULL ");
+        $stmt = $this->pdo->query(" SELECT * FROM movies ");
         return $stmt->fetchAll(PDO::FETCH_CLASS, "Movie");
     }
     public function add(Movie $movie)
@@ -31,14 +31,14 @@ release_year, genre, director, created_at, updated_at) VALUES (? , ? , ?, ? , ?,
 
     public function find($id)
     {
-        $stmt = $this->pdo->prepare(" SELECT * FROM movies WHERE id = ? AND deleted_at IS NULL ");
+        $stmt = $this->pdo->prepare(" SELECT * FROM movies WHERE id = ? ");
         $stmt->execute([$id]);
         return $stmt->fetchObject("Movie");
     }
 
     public function delete($id)
     {
-        $stmt = $this->pdo->prepare(" UPDATE rooms SET deleted_at = NOW() WHERE id = ? ");
+        $stmt = $this->pdo->prepare(" DELETE FROM movies WHERE id = ? ");
         $stmt->execute([$id]);
     }
     public function update(Movie $movie)

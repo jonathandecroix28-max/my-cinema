@@ -50,8 +50,10 @@
                         <form class="form" id="addMovieForm">
                             <h3>Ajouter un nouveau film</h3>
                             <label class="form-label">Titre</label>
-                            <input class="form-control form-control-sm" type="text" name="title" id="movieTitle"
-                                required>
+                            <input class="form-control form-control-sm" type="text" list="listTitle" name="title"
+                                id="movieTitle" required>
+
+                            <datalist id="listTitle"></datalist>
 
                             <label class="form-label">Description</label>
                             <textarea class="form-control form-control-sm mb-4" name="summary" id="movieSummary"
@@ -70,8 +72,10 @@
                             </div>
 
                             <label class="form-label">Genre</label>
-                            <input class="form-control form-control-sm" type="text" name="genre" id="movieGenre"
-                                required>
+                            <input type="text" id="movieGenre" list="genreList" class="form-control">
+
+                            <datalist id="genreList">
+                            </datalist>
 
                             <label class="form-label">Réalisateur</label>
                             <input class="form-control form-control-sm" type="text" name="director" id="movieDirector"
@@ -92,6 +96,17 @@
             <div class="container mt-4 ">
                 <h2 class="text-center mb-4">Listes des films et salles</h2>
                 <div id="screeningsList" class="d-flex flex-wrap justify-content-center gap-3"></div>
+
+            </div>
+            <div class="pagination-controls d-flex justify-content-center align-items-center gap-3 mt-4">
+                <button id="btnPrevMovie" class="btn btn-secondary">
+                    <i class="bi bi-chevron-left"></i> Précédent
+                </button>
+                <span id="pageInfoMovie" class="text-white">Page 1 sur 1</span>
+                <button id="btnNextMovie" class="btn btn-secondary">
+                    Suivant <i class="bi bi-chevron-right"></i>
+                </button>
+            </div>
             </div>
         </section>
     </main>

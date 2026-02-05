@@ -1,5 +1,6 @@
 <?php
 
+
 session_start();
 // On affiche les erreurs pour voir ce qui se passer
 ini_set('display_errors', 1);
