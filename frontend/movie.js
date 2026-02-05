@@ -1,23 +1,11 @@
-// ✅ Imports
+// ✅ Imports CORRIGÉS (sans movieMetadata)
 import { apiFetch, truncateText, apiDelete, apiPost, apiPut } from './config.js';
 import { els } from './dom-elements.js';
 import { getPaginatedItems, getPageInfo, isFirstPage, isLastPage, disableButton, enableButton, ITEMS_PER_PAGE } from './pagination.js';
-import { genre } from './dom-elements.js';
-//import { moviesTitle } from './dom-elements.js';
-import { movieMetadata } from './config.js';
-import { generateFullMovies } from './config.js';
+import { moviesDatabase, genres } from './movie-data.js'; // ✅ SEULEMENT moviesDatabase et genres
 
 const { movieSelect, formMovie, listScreenings, stockMovie } = els;
 
-// ✅ Génération des films pour le select (UNE SEULE FOIS)
-const films = generateFullMovies(movieMetadata);
-
-films.forEach(movie => {
-    const option = new Option(movie.title, movie.id);
-    if (movieSelect) {
-        movieSelect.appendChild(option);
-    }
-});
 // ✅ État de la pagination
 let state = {
     currentPage: 1,
@@ -26,6 +14,14 @@ let state = {
 
 // Récupération des films depuis l'API
 const movies = await apiFetch('list_movies');
+
+// ✅ Remplir le select avec les films de la DB
+if (movieSelect && movies.length > 0) {
+    movies.forEach(movie => {
+        const option = new Option(movie.title, movie.id);
+        movieSelect.appendChild(option);
+    });
+}
 
 // Boutons de pagination
 const btnPrevMovie = document.getElementById('btnPrevMovie');
@@ -85,34 +81,26 @@ const createMovieRow = (movie) => {
 const renderMovies = () => {
     if (!movieTableBody) return;
 
-    // Vider le tableau
     movieTableBody.innerHTML = '';
-
-    // Récupérer les films de la page courante
     const paginatedMovies = getPaginatedItems(movies, state.currentPage, state.itemsPerPage);
 
     if (paginatedMovies.length > 0) {
         paginatedMovies.forEach(movie => {
-            // ✅ CORRECTION : Ne plus remplir le select ici (déjà fait au chargement)
-            // Ajouter la ligne au tableau
             movieTableBody.appendChild(createMovieRow(movie));
         });
     } else {
         movieTableBody.innerHTML = '<tr><td colspan="8" class="text-center">Aucun film trouvé</td></tr>';
     }
 
-    // Mettre à jour l'UI de pagination
     updatePaginationUI();
 };
 
 // ✅ Fonction pour mettre à jour l'UI de pagination
 const updatePaginationUI = () => {
-    // Mettre à jour le texte
     if (pageInfoMovie) {
         pageInfoMovie.textContent = getPageInfo(state.currentPage, movies.length, state.itemsPerPage);
     }
 
-    // Gérer l'état des boutons
     if (isFirstPage(state.currentPage)) {
         disableButton(btnPrevMovie);
     } else {
@@ -154,7 +142,6 @@ const enableEditMode = (row) => {
 
     row.classList.add('editing-mode');
 
-    // ✅ CORRECTION : list="listTitle" au lieu de list="listMovie"
     row.querySelector('.movie-title').innerHTML =
         `<input type="text" class="inline-input" list="listTitle" value="${movie.title}" data-field="title">`;
 
@@ -212,7 +199,7 @@ const saveMovie = async (row) => {
                 movies[movieIndex] = { ...movies[movieIndex], ...movieData };
             }
 
-            renderMovies(); // Re-render au lieu de replaceWith
+            renderMovies();
         } else {
             alert(`Erreur : ${result.error || 'Erreur inconnue'}`);
         }
@@ -223,7 +210,7 @@ const saveMovie = async (row) => {
 
 // ✅ Fonction pour annuler l'édition
 const cancelEdit = (row) => {
-    renderMovies(); // Re-render pour restaurer l'état normal
+    renderMovies();
 };
 
 // Fonction de suppression
@@ -239,11 +226,10 @@ const executeDelete = async (type, id, rowElement) => {
                 movies.splice(index, 1);
             }
 
-            // ✅ Supprimer aussi du select généré
             const option = movieSelect?.querySelector(`option[value="${id}"]`);
             if (option) option.remove();
 
-            renderMovies(); // Re-render après suppression
+            renderMovies();
         } else {
             alert(data.error);
         }
@@ -252,13 +238,12 @@ const executeDelete = async (type, id, rowElement) => {
     }
 };
 
-// ✅ Gestionnaire d'événements PRINCIPAL (délégation d'événements)
+// ✅ Gestionnaire d'événements PRINCIPAL
 if (movieTableBody) {
     movieTableBody.addEventListener('click', async (e) => {
         const row = e.target.closest('tr');
         if (!row) return;
 
-        // 🗑️ Suppression
         if (e.target.closest('.delete-row-btn')) {
             const movieId = e.target.closest('.delete-row-btn').dataset.id;
             if (confirm("Supprimer ce film ?")) {
@@ -267,22 +252,68 @@ if (movieTableBody) {
             return;
         }
 
-        // ✏️ Édition
         if (e.target.closest('.edit-row-btn')) {
             enableEditMode(row);
             return;
         }
 
-        // 💾 Sauvegarde
         if (e.target.closest('.save-row-btn')) {
             await saveMovie(row);
             return;
         }
 
-        // ❌ Annulation
         if (e.target.closest('.cancel-edit-btn')) {
             cancelEdit(row);
             return;
+        }
+    });
+}
+
+// ✅✨ FONCTIONNALITÉ D'AUTO-COMPLÉTION ✨✅
+// Fonction pour remplir automatiquement le formulaire
+const autoFillForm = (selectedTitle) => {
+    // Chercher d'abord dans la base de données locale (moviesDatabase)
+    let movie = moviesDatabase.find(m => m.title.toLowerCase() === selectedTitle.toLowerCase());
+
+    // Si pas trouvé, chercher dans les films de l'API
+    if (!movie) {
+        movie = movies.find(m => m.title.toLowerCase() === selectedTitle.toLowerCase());
+    }
+
+    if (movie) {
+        // Remplir tous les champs du formulaire
+        const descriptionField = document.getElementById('movieSummary');
+        const durationField = document.getElementById('movieDuration');
+        const genreField = document.getElementById('movieGenre');
+        const directorField = document.getElementById('movieDirector');
+        const releaseYearField = document.getElementById('movieReleaseYear');
+
+        if (descriptionField) descriptionField.value = movie.description || '';
+        if (durationField) durationField.value = movie.duration || '';
+        if (genreField) genreField.value = movie.genre || '';
+        if (directorField) directorField.value = movie.director || '';
+        if (releaseYearField) releaseYearField.value = movie.release_year || '';
+
+        console.log('✅ Formulaire auto-rempli avec:', movie.title);
+    }
+};
+
+// ✅ Écouter les changements sur le champ titre
+const titleInput = document.getElementById('movieTitle');
+if (titleInput) {
+    // Méthode 1 : Détecter quand l'utilisateur sélectionne dans la datalist
+    titleInput.addEventListener('input', (e) => {
+        const selectedTitle = e.target.value;
+        if (selectedTitle.trim()) {
+            autoFillForm(selectedTitle);
+        }
+    });
+
+    // Méthode 2 : Détecter quand l'utilisateur quitte le champ (blur)
+    titleInput.addEventListener('blur', (e) => {
+        const selectedTitle = e.target.value;
+        if (selectedTitle.trim()) {
+            autoFillForm(selectedTitle);
         }
     });
 }
@@ -306,15 +337,7 @@ if (formMovie) {
 
             if (result.success) {
                 alert('Film ajouté avec succès 🎬');
-
-                // ✅ AMÉLIORATION : Option 1 - Recharger
-                // location.reload();
-
-                // ✅ AMÉLIORATION : Option 2 - Ajouter dynamiquement sans recharger
-                movies.push({ id: result.id, ...movieData });
-                renderMovies();
-                formMovie.reset();
-
+                location.reload();
             } else {
                 alert(`Erreur : ${result.error || 'Erreur inconnue'}`);
             }
@@ -327,22 +350,21 @@ if (formMovie) {
 // ✅ Remplissage de la datalist des genres
 const genreDatalist = document.getElementById('genreList');
 
-if (genreDatalist && genre) {
-    // On transforme l'objet genre en tableau de valeurs et on crée les options
-    Object.values(genre).forEach(genreName => {
+if (genreDatalist && genres) {
+    genres.forEach(genreName => {
         const option = document.createElement('option');
         option.value = genreName;
         genreDatalist.appendChild(option);
     });
 }
 
-// ✅ Remplissage de la datalist des titres
+// ✅ Remplissage de la datalist des titres (avec les films de moviesDatabase)
 const titleDataList = document.getElementById('listTitle');
 
-if (titleDataList && moviesTitle) {
-    Object.values(moviesTitle).forEach(titleName => {
+if (titleDataList && moviesDatabase) {
+    moviesDatabase.forEach(movie => {
         const option = document.createElement("option");
-        option.value = titleName;
+        option.value = movie.title;
         titleDataList.appendChild(option);
     });
 }
@@ -357,5 +379,5 @@ renderMovies();
 
 console.log('✅ movie.js chargé', {
     moviesAPI: movies.length,
-    filmsGenerated: films.length
+    moviesDatabase: moviesDatabase.length
 });
