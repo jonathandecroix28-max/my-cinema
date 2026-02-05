@@ -38,6 +38,21 @@ CREATE TABLE IF NOT EXISTS screenings (
     FOREIGN KEY (room_id) REFERENCES rooms(id) ON DELETE CASCADE
 );
 
+/*ALTER TABLE rooms ADD COLUMN deleted_at DATETIME DEFAULT NULL;
+ALTER TABLE movies ADD COLUMN deleted_at DATETIME DEFAULT NULL;
+ALTER TABLE screenings ADD COLUMN deleted_at DATETIME DEFAULT NULL;*/
+
+-- On s'assure que toutes les lignes existantes ont bien NULL
+UPDATE movies SET deleted_at = NULL;
+
+-- On s'assure que la colonne accepte le NULL par défaut
+ALTER TABLE movies MODIFY deleted_at DATETIME DEFAULT NULL;
+-- On s'assure que toutes les lignes existantes ont bien NULL
+UPDATE rooms SET deleted_at = NULL;
+
+-- On s'assure que la colonne accepte le NULL par défaut
+ALTER TABLE rooms MODIFY deleted_at DATETIME DEFAULT NULL;
+
 
 /*
 UPDATE screenings 

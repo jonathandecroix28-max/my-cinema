@@ -11,7 +11,7 @@ class RoomRepository
 
     public function getAll()
     {
-        $stmt = $this->pdo->query("SELECT * FROM rooms");
+        $stmt = $this->pdo->query("SELECT * FROM rooms WHERE deleted_at IS NULL");
         return $stmt->fetchAll(PDO::FETCH_CLASS, 'Rooms');
     }
 
@@ -30,7 +30,7 @@ class RoomRepository
 
     public function find($id)
     {
-        $stmt = $this->pdo->prepare("SELECT * FROM rooms WHERE id = ?");
+        $stmt = $this->pdo->prepare("SELECT * FROM rooms WHERE id = ? AND deleted_at IS NULL");
         $stmt->execute([$id]);
         $stmt->setFetchMode(PDO::FETCH_CLASS, 'Rooms');
         return $stmt->fetch();
@@ -38,7 +38,7 @@ class RoomRepository
 
     public function delete($id)
     {
-        $stmt = $this->pdo->prepare("DELETE FROM rooms WHERE id = ?");
+        $stmt = $this->pdo->prepare("UPDATE rooms SET deleted_at = NOW() WHERE id = ?");
         $stmt->execute([$id]);
     }
 

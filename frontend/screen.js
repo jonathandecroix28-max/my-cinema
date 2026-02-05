@@ -134,7 +134,7 @@ const saveScreening = async (row) => {
         return;
     }
     try {
-        const result = await apiPut(`update_screening&id=${screeningId}`, screeningData);
+        const result = await apiPut(`screening`, screeningId, screeningData);
         if (result && result.success) {
             alert('Séance mise à jour !');
             // Mettre à jour l'affichage
