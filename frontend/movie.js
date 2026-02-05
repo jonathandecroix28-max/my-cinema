@@ -12,6 +12,10 @@ let state = {
     itemsPerPage: ITEMS_PER_PAGE
 };
 
+const year = document.getElementById('movieReleaseYear');
+const currentYear = new Date().getFullYear();
+year.setAttribute('min', '1895');
+year.setAttribute('max', currentYear.toString());
 // Récupération des films depuis l'API
 const movies = await apiFetch('list_movies');
 
@@ -60,7 +64,7 @@ const createMovieRow = (movie) => {
     tr.innerHTML = `
         <td class="movie-id">${movie.id}</td>
         <td class="movie-title">${movie.title}</td>
-        <td class="movie-description">${truncateText(movie.description, 50)}</td>
+        <td class="movie-description">${truncateText(movie.description, 100)}</td>
         <td class="movie-duration">${movie.duration}</td>
         <td class="movie-genre">${movie.genre}</td>
         <td class="movie-director">${movie.director || 'N/A'}</td>
@@ -158,7 +162,7 @@ const enableEditMode = (row) => {
         `<input type="text" class="inline-input" value="${movie.director || ''}" data-field="director">`;
 
     row.querySelector('.movie-year').innerHTML =
-        `<input type="text" class="inline-input" value="${movie.release_year}" data-field="release_year">`;
+        `<input type="text" class="inline-input" min="1895" max="${new Date().getFullYear()}" value="${movie.release_year}" data-field="release_year">`;
 
     row.querySelector('.actions').innerHTML = `
         <button class="btn btn-success btn-sm save-row-btn" data-id="${movieId}">
@@ -182,7 +186,13 @@ const saveMovie = async (row) => {
         director: row.querySelector('[data-field="director"]').value,
         release_year: row.querySelector('[data-field="release_year"]').value
     };
+    const currentYear = new Date().getFullYear();
+    const releaseYear = parseInt(movieData.release_year.value);
 
+    if (releaseYear < 1895 || releaseYear > currentYear) {
+        alert(`L'année doit être comprise entre 1895 et ${currentYear}.`);
+        return; // On arrête l'exécution ici
+    }
     if (!movieData.title || !movieData.description) {
         alert('Le titre et la description sont obligatoires');
         return;
@@ -332,8 +342,17 @@ if (formMovie) {
             release_year: document.getElementById('movieReleaseYear').value
         };
 
+        const currentYear = new Date().getFullYear();
+        const releaseYear = parseInt(document.getElementById('movieReleaseYear').value);
+
+        if (releaseYear < 1895 || releaseYear > currentYear) {
+            alert(`L'année doit être comprise entre 1895 et ${currentYear}.`);
+            return; // On arrête l'exécution ici
+        }
+
         try {
             const result = await apiPost('add_movie', movieData);
+
 
             if (result.success) {
                 alert('Film ajouté avec succès 🎬');
