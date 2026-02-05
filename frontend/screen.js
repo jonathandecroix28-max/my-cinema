@@ -50,10 +50,10 @@ const displayRoom = (room_id) => {
 };
 
 // Création du tableau des séances
-if (listScreenings) {
-    const screeningTable = document.createElement('table');
-    screeningTable.className = 'table table-bordered table-striped mt-4';
-    screeningTable.innerHTML = `
+
+const screeningTable = document.createElement('table');
+screeningTable.className = 'table table-bordered table-striped mt-4';
+screeningTable.innerHTML = `
         <thead>
             <tr>
                 <th>ID</th>
@@ -66,67 +66,119 @@ if (listScreenings) {
         <tbody id="screeningTableBody"></tbody>
     `;
 
-    // ✅ D'abord ajouter au DOM
-    listScreenings.appendChild(screeningTable);
+// ✅ D'abord ajouter au DOM
+if (listScreenings) { listScreenings.appendChild(screeningTable) };
 
-    // ✅ PUIS récupérer le tbody
-    const screeningTableBody = document.getElementById('screeningTableBody');
+// ✅ PUIS récupérer le tbody
+const screeningTableBody = document.getElementById('screeningTableBody');
 
-    // Remplir le tableau avec les séances
-    if (screeningTableBody && screenings.length > 0) {
-        screenings.forEach(screening => {
-            const row = document.createElement('tr');
-            row.innerHTML = `
-                <td>${screening.id}</td>
-                <td>${displayMovie(screening.movie_id)}</td>
-                <td>${displayRoom(screening.room_id)}</td>
-                <td>${formatDate(screening.start_time)}</td>
-                <td>
+
+//creation des ligne de tableau pour afficher les donnees de la DB
+const createScreeningRow = (screening) => {
+    const tr = document.createElement('tr');
+    tr.dataset.id = screening.id;
+    tr.innerHTML = `
+                <td class="screening-id">${screening.id}</td>
+                <td class="screening-movie-id">${displayMovie(screening.movie_id)}</td>
+                <td class="screening-room-id">${displayRoom(screening.room_id)}</td>
+                <td class="screening-startime">${formatDate(screening.start_time)}</td>
+                <td class="actions">
                     <button class="btn btn-danger btn-sm delete-row-btn" data-id="${screening.id}">
                         <i class="bi bi-trash"></i>
                     </button>
-                    <button class="btn btn-secondary btn-sm update-row-btn" data-id="${screening.id}">
-                        <i class="bi bi-pencil"></i>
+                    <button class="btn btn-warning btn-sm edit-row-btn" data-id="${screening.id}">
+                        <i class="bi bi-pencil"></i> Modifier
                     </button>
                 </td>
             `;
-            screeningTableBody.appendChild(row);
-        });
+    return tr;
+};
 
+const enableEditMode = (row) => {
+    const screeningId = row.dataset.id;
+    const screening = screenings.find(s => s.id == screeningId);
+    if (!screening) {
+        alert('Séance introuvable');
+        return;
+    }
+    row.classList.add('editing-mode');
+    row.querySelector(".screening-startime").innerHTML = `<input type="datetime-local" class="inline-input" value="${new Date(screening.start_time).toISOString().slice(0, 16)}" data-field="start_time">`;
 
-        // ✅ Gestionnaire d'événements pour la suppression
-        screeningTableBody.addEventListener('click', async (e) => {
-            const btn = e.target.closest('.delete-row-btn');
-            const btnUpdate = e.target.closest('.update-row-btn');
+    row.querySelector(".screening-movie-id").innerHTML = `<select class="inline-select" data-field="movie_id">
+                ${movies.map(movie => `<option value="${movie.id}"${movie.id == screening.movie_id ? ' selected' : ''}>${movie.title}</option>`).join('')}
+            </select>`;
 
-            if (btn) {
-                const screeningId = btn.dataset.id;
-                if (confirm("Supprimer cette séance ?")) {
-                    await executeDelete('screening', screeningId, btn.closest('tr'));
-                }
-            }
-            if (btnUpdate) {
-                const screeningId = btnUpdate.dataset.id;
-                const newStartTime = prompt("Nouvelle heure de début (YYYY-MM-DD HH:MM:SS) :");
-                if (newStartTime) {
-                    const result = await updateScreening(screeningId, { start_time: newStartTime });
-                    if (result && result.success) {
-                        alert('Séance mise à jour !');
-                        // Mettre à jour l'affichage
-                        const startTimeCell = btnUpdate.closest('tr').children[3];
-                        startTimeCell.textContent = formatDate(newStartTime);
-                    } else {
-                        alert(result.error || 'Erreur lors de la mise à jour');
-                    }
-                }
-            }
-        });
-    } else if (screeningTableBody) {
-        screeningTableBody.innerHTML = '<tr><td colspan="5" class="text-center">Aucune séance programmée</td></tr>';
+    row.querySelector(".screening-room-id").innerHTML = `<select class="inline-select" data-field="room_id">
+                ${rooms.map(room => `<option value="${room.id}"${room.id == screening.room_id ? ' selected' : ''}>${room.name} (${room.type})</option>`).join('')}
+            </select>`;
+
+    row.querySelector(".actions").innerHTML = `
+                <button class="btn btn-success btn-sm save-row-btn" data-id="${screening.id}">
+                    <i class="bi bi-check-lg"></i> Sauvegarder
+                </button>
+                <button class="btn btn-secondary btn-sm cancel-edit-btn" data-id="${screening.id}">
+                    <i class="bi bi-x"></i> Annuler
+                </button>
+            `;
+}
+
+const saveScreening = async (row) => {
+    const screeningId = row.dataset.id;
+    const screeningData = {
+        movie_id: parseInt(row.querySelector('.inline-select[data-field="movie_id"]').value, 10),
+        room_id: parseInt(row.querySelector('.inline-select[data-field="room_id"]').value, 10),
+        start_time: row.querySelector('.inline-input[data-field="start_time"]').value
+    };
+    if (!screeningData.movie_id || !screeningData.room_id || !screeningData.start_time) {
+        alert('Veuillez remplir tous les champs');
+        return;
+    }
+    try {
+        const result = await apiPut(`update_screening&id=${screeningId}`, screeningData);
+        if (result && result.success) {
+            alert('Séance mise à jour !');
+            // Mettre à jour l'affichage
+            row.querySelector(".screening-movie-id").textContent = displayMovie(screeningData.movie_id);
+            row.querySelector(".screening-room-id").textContent = displayRoom(screeningData.room_id);
+            row.querySelector(".screening-startime").textContent = formatDate(screeningData.start_time);
+            // Revenir en mode affichage
+            row.classList.remove('editing-mode');
+            row.querySelector('.actions').innerHTML = `
+                    <button class="btn btn-danger btn-sm delete-row-btn" data-id="${screeningId}">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                    <button class="btn btn-warning btn-sm edit-row-btn" data-id="${screeningId}">
+                        <i class="bi bi-pencil"></i> Modifier
+                    </button>
+                `;
+        } else {
+            alert(result.error || 'Erreur lors de la mise à jour');
+        }
+    } catch (error) {
+        alert(`Erreur lors de la mise à jour : ${error.message}`);
     }
 }
 
-// Fonction de suppression
+// Remplir le tableau
+if (screeningTableBody && screenings.length > 0) {
+    screenings.forEach(screening => {
+        screeningTableBody.appendChild(createScreeningRow(screening));
+    });
+} else if (screeningTableBody) {
+    screeningTableBody.innerHTML = '<tr><td colspan="5" class="text-center">Aucune séance programmée</td></tr>';
+}
+
+const cancelEdit = (row) => {
+    const screeningId = row.dataset.id;
+    const screening = screenings.find(s => s.id == screeningId);
+    if (!screening) return;
+
+    if (screening) {
+        const newRow = createScreeningRow(screening);
+        row.replaceWith(newRow);
+    }
+};
+
 const executeDelete = async (type, id, rowElement) => {
     try {
         const data = await apiDelete(type, id);
@@ -134,6 +186,14 @@ const executeDelete = async (type, id, rowElement) => {
         if (data.success) {
             alert(`${type} supprimé !`);
             rowElement.remove();
+
+            const index = screenings.findIndex(s => s.id == id);
+            if (index !== -1) {
+                screenings.splice(index, 1);
+            }
+
+            const option = document.querySelector(`select option[value="${id}"]`);
+            if (option) option.remove();
         } else {
             alert(data.error || 'Erreur lors de la suppression');
         }
@@ -142,14 +202,37 @@ const executeDelete = async (type, id, rowElement) => {
     }
 };
 
-const updateScreening = async (id, data) => {
-    try {
-        const result = await apiPut(`update_screening&id=${id}`, data);
-        return result;
-    } catch (error) {
-        alert(`Erreur lors de la mise à jour : ${error.message}`);
-    }
+
+if (screeningTableBody) {
+    screeningTableBody.addEventListener('click', async (e) => {
+        const row = e.target.closest('tr');
+        if (!row) return;
+
+        if (e.target.closest('.delete-row-btn')) {
+            const screeningId = e.target.closest('.delete-row-btn').dataset.id;
+            if (confirm("Supprimer cette séance ?")) {
+                await executeDelete('screening', screeningId, row);
+            }
+            return;
+        }
+
+        if (e.target.closest('.edit-row-btn')) {
+            enableEditMode(row);
+            return;
+        }
+
+        if (e.target.closest('.save-row-btn')) {
+            await saveScreening(row);
+            return;
+        }
+
+        if (e.target.closest('.cancel-edit-btn')) {
+            cancelEdit(row);
+            return;
+        }
+    });
 }
+
 
 // ✅ Gestion du formulaire d'ajout de séance
 if (screeningForm) {

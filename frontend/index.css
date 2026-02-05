@@ -8,6 +8,50 @@ body {
     text-align: center !important;
 }
 
+/* ✅ Styles pour l'édition inline */
+.editing-mode {
+    background-color: #fff3cd !important;
+    border: 2px solid #ffc107 !important;
+}
+
+.inline-input {
+    width: 100%;
+    padding: 4px 8px;
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+    background-color: white;
+    color: black;
+}
+
+.inline-select {
+    width: 100%;
+    padding: 4px 8px;
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+    background-color: white;
+    color: black;
+}
+
+.inline-textarea {
+    width: 100%;
+    min-height: 60px;
+    padding: 4px 8px;
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+    background-color: white;
+    color: black;
+    resize: vertical;
+}
+
+tr.editing-mode td {
+    padding: 8px;
+}
+
+body {
+    white-space: nowrap;
+    text-align: center !important;
+}
+
 #selectsContainer {
     display: flex;
     justify-content: center;

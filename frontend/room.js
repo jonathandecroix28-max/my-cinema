@@ -1,5 +1,5 @@
 import { els } from './dom-elements.js';
-import { apiFetch, apiDelete, apiPost } from './config.js';
+import { apiFetch, apiDelete, apiPost, apiPut } from './config.js';
 
 const { roomSelect, formRoom, listScreenings, stockRoom } = els;
 
@@ -24,10 +24,31 @@ roomTable.innerHTML = `
 // ✅ D'abord ajouter au DOM
 if (listScreenings) {
     listScreenings.appendChild(roomTable);
-}
+};
 
 // ✅ PUIS récupérer l'élément
 const roomTableBody = document.getElementById('roomTableBody');
+
+const createRoomRow = (room) => {
+    const tr = document.createElement("tr");
+    tr.dataset.id = room.id
+    tr.innerHTML = `
+            <td class="room-id">${room.id}</td>
+            <td class="room-name">${room.name}</td>
+            <td class="room-capacity">${room.capacity}</td>
+            <td class="room-type">${room.type}</td>
+            <td class="room-active">${room.active ? 'Oui' : 'Non'}</td>
+            <td class="actions">
+                <button class="btn btn-danger btn-sm delete-row-btn" data-id="${room.id}">
+                    <i class="bi bi-trash"></i>
+                </button>
+                <button class="btn btn-warning btn-sm edit-row-btn" data-id="${room.id}">
+                    <i class="bi bi-pencil"></i> Modifier
+                </button>
+            </td>
+        `;
+    return tr;
+};
 
 // Remplir le tableau et le select
 if (roomTableBody && rooms.length > 0) {
@@ -38,26 +59,83 @@ if (roomTableBody && rooms.length > 0) {
             roomSelect.appendChild(option);
         }
 
-        // 2. Créer la ligne du tableau
-        const row = document.createElement('tr');
-        row.innerHTML = `
-            <td>${room.id}</td>
-            <td>${room.name}</td>
-            <td>${room.capacity}</td>
-            <td>${room.type}</td>
-            <td>${room.active ? 'Oui' : 'Non'}</td>
-            <td>
-                <button class="btn btn-danger btn-sm delete-row-btn" data-id="${room.id}">
-                    <i class="bi bi-trash"></i>
-                </button>
-                <button class="btn btn-secondary btn-sm" disabled>
-                    <i class="bi bi-pencil"></i>
-                </button>
-            </td>
-        `;
-        roomTableBody.appendChild(row);
+        roomTableBody.appendChild(createRoomRow(room));
     });
-}
+};
+
+const enableEditMode = (row) => {
+    const roomId = row.dataset.id;
+    const room = rooms.find(r => r.id == roomId)
+    if (!room) return;
+
+    row.classList.add('editing-mode');
+
+    row.querySelector(".room-name").innerHTML = `<input type="text" class="inline-input" value="${room.name}" data-field="name">`;
+
+    row.querySelector(".room-capacity").innerHTML = `<input type="text" class="inline-input" value="${room.capacity}" data-field="capacity">`
+    row.querySelector(".room-type").innerHTML = `<select class="inline-input" data-field="type">
+    <option value="2D"${room.type === '2D' ? ' selected' : ''}>2D</option>
+    <option value="3D"${room.type === '3D' ? ' selected' : ''}>3D</option>
+    <option value="IMAX"${room.type === 'IMAX' ? ' selected' : ''}>IMAX</option>
+                            </select>`
+    row.querySelector(".room-active").innerHTML = `<select class="inline-input" data-field="active">
+    <option value="1"${room.active == 1 ? ' selected' : ''}>Oui</option>
+                                <option value="0"${room.active == 0 ? ' selected' : ''}>Non</option>
+                            </select> `;
+    row.querySelector('.actions').innerHTML = `
+        <button class="btn btn-success btn-sm save-row-btn" data-id="${room.id}">
+            <i class="bi bi-check-lg"></i> Sauvegarder
+        </button>
+        <button class="btn btn-secondary btn-sm cancel-edit-btn" data-id="${room.id}">
+            <i class="bi bi-x-lg"></i> Annuler
+        </button>
+    `;
+};
+
+const saveRoom = async (row) => {
+    const roomId = row.dataset.id;
+
+    const roomData = {
+        name: row.querySelector('[data-field="name"]').value,
+        capacity: row.querySelector('[data-field="capacity"').value,
+        type: row.querySelector('[data-field="type"]').value,
+        active: row.querySelector('[data-field="active"]').value
+    }
+    if (!roomData.name || !roomData.capacity) {
+        alert('Veillez indiquer le name et l\'espace disponible');
+        return;
+    }
+
+    try {
+        const result = await apiPut('room', roomId, roomData);
+        if (result.success) {
+            alert('Salle modifié avec succès !')
+
+            const roomIndex = rooms.findIndex(r => r.id = roomId);
+            if (roomIndex !== -1) {
+                rooms[roomIndex] = { ...rooms[roomIndex], ...roomData };
+            }
+
+            const newRow = createRoomRow(rooms[roomIndex]);
+            row.replaceWith(newRow);
+        } else {
+            alert(`Erreur : ${result.error || 'Erreur inconnue'}`);
+        }
+    }
+    catch {
+        alert(`Erreur : ${error.message}`);
+    }
+};
+
+const cancelEdit = (row) => {
+    const roomId = row.dataset.id;
+    const room = rooms.find(m => m.id = roomId);
+
+    if (room) {
+        const newRow = createRoomRow(room);
+        row.replaceWith(newRow);
+    }
+};
 
 // Fonction de suppression
 const executeDelete = async (type, id, rowElement) => {
@@ -92,6 +170,34 @@ if (roomTableBody) {
             }
         }
     });
+}
+
+if (roomTableBody) {
+    roomTableBody.addEventListener('click', async (e) => {
+        const row = e.target.closest('tr');
+        if (!row) return;
+        if (e.target.closest('.delete-row-btn')) {
+            const roomId = e.target.closest('.delete-row-btn').dataset.id;
+            if (confirm("Supprimer cette salle ?")) {
+                await executeDelete('room', roomId, row)
+            } return;
+        }
+        if (e.target.closest('.edit-row-btn')) {
+            enableEditMode(row);
+            return;
+        }
+
+        if (e.target.closest('.save-row-btn')) {
+            await saveRoom(row);
+            return;
+        }
+
+        // ❌ Annulation
+        if (e.target.closest('.cancel-edit-btn')) {
+            cancelEdit(row);
+            return;
+        }
+    })
 }
 
 // ✅ Formulaire d'ajout CORRIGÉ
@@ -143,3 +249,4 @@ console.log('✅ room.js chargé', {
     formRoom,
     rooms: rooms.length
 });
+

@@ -48,7 +48,7 @@ export const apiDelete = async (type, id) => {
 };
 export const apiPut = async (type, id, data) => {
     return await apiFetch(`update_${type}&id=${id}`, {
-        method: 'PUT',
+        method: 'POST',
         headers: {
             'Content-Type': 'application/json'
         },
