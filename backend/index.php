@@ -1,21 +1,28 @@
 <?php
 
+// ✅ Désactiver l'affichage des erreurs en production
+ini_set('display_errors', 0);
+error_reporting(E_ALL);
+
+// ✅ Logger les erreurs dans un fichier
+ini_set('log_errors', 1);
+ini_set('error_log', __DIR__ . '/logs/php_errors.log');
 
 session_start();
-// On affiche les erreurs pour voir ce qui se passer
-ini_set('display_errors', 1);
-error_reporting(E_ALL);
 header('Content-Type: application/json');
+header('Access-Control-Allow-Origin: *'); // ✅ CORS pour le frontend
+header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
+header('Access-Control-Allow-Headers: Content-Type');
+
+// Gérer les requêtes OPTIONS (preflight CORS)
+if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+    http_response_code(200);
+    exit;
+}
+
 require_once(__DIR__ . '/config/database.php');
-//echo "Le fichier index.php est lu par le serveur !";
-// Le chemin ABSOLU vers ton fichier de base de données
-
-
-
-// autoload de toutes les classes
 require_once __DIR__ . '/autoload.php';
 
-// récupérer le paramètre action
 $request = $_GET['action'] ?? '';
 
 
