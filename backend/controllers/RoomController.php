@@ -103,4 +103,3 @@ class RoomController
     }
     // Autres méthodes correspondant aux autres routes API .
 }
-?>
