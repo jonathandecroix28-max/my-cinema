@@ -62,4 +62,12 @@ class RoomRepository
         $stmt->execute([$room_id]);
         return $stmt->fetchColumn() > 0;
     }
+
+    public function findById(int $id): bool
+    {
+        $sql = "SELECT COUNT(*) FROM rooms WHERE id = :id";
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute([':id' => $id]);
+        return (int) $stmt->fetchColumn() > 0;
+    }
 }

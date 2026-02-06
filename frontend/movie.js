@@ -153,31 +153,8 @@ if (btnNextMovie) {
     });
 }
 
-document.getElementById('apply-filters').addEventListener('click', () => {
-    const genre = document.getElementById('filter-genre').value;
-    const year = document.getElementById('filter-year').value;
 
-    // Création de l'objet URLSearchParams pour gérer proprement les paramètres
-    const params = new URLSearchParams({
-        action: 'list_movies'
-    });
 
-    if (genre) params.append('genre', genre);
-    if (year) params.append('year', year);
-
-    // Construction de l'URL finale : backend/index.php?action=list_movies&genre=...
-    const url = `backend/index.php?${params.toString()}`;
-
-    // On appelle ta fonction de chargement globale
-    loadMovies(url);
-});
-
-// Bouton Réinitialiser
-document.getElementById('reset-filters').addEventListener('click', () => {
-    document.getElementById('filter-genre').value = "";
-    document.getElementById('filter-year').value = "";
-    loadMovies('backend/index.php?action=list_movies');
-});
 
 // Fonction pour transformer une ligne en mode édition
 const enableEditMode = (row) => {

@@ -58,18 +58,27 @@ release_year, genre, director, created_at, updated_at) VALUES (? , ? , ?, ? , ?,
     }
     // Dans ton MovieRepository
     // Fichier : MovieRepository.php
-    public function exists(string $title, int $year, ?string $director = null): bool
+    // On ajoute des valeurs par défaut (= null ou = 0) aux arguments
+    public function exists(string $title, int $year = 0, ?string $director = null, ?int $excludeId = null): bool
     {
-        $sql = "SELECT COUNT(*) FROM movies WHERE title = :title AND release_year = :year";
-        $params = [
-            ':title' => $title,
-            ':year' => $year
-        ];
+        $sql = "SELECT COUNT(*) FROM movies WHERE title = :title";
+        $params = [':title' => $title];
 
-        // On n'ajoute la condition réalisateur que si on a reçu la donnée
+        // On n'ajoute l'année que si elle est renseignée (différente de 0)
+        if ($year !== 0) {
+            $sql .= " AND release_year = :year";
+            $params[':year'] = $year;
+        }
+
+        // On n'ajoute le réalisateur que si il est renseigné
         if ($director !== null) {
             $sql .= " AND director = :director";
             $params[':director'] = $director;
+        }
+
+        if ($excludeId !== null) {
+            $sql .= " AND id != :excludeId";
+            $params[':excludeId'] = $excludeId;
         }
 
         $stmt = $this->pdo->prepare($sql);
@@ -94,5 +103,13 @@ release_year, genre, director, created_at, updated_at) VALUES (? , ? , ?, ? , ?,
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute($params);
         return $stmt->fetchAll();
+    }
+
+    public function findById(int $id): bool
+    {
+        $sql = "SELECT COUNT(*) FROM movies WHERE id = :id";
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute([':id' => $id]);
+        return (int) $stmt->fetchColumn() > 0;
     }
 }

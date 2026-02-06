@@ -15,12 +15,12 @@ class ScreeningService
     public function addScreening($movie_id, $room_id, $start_time)
     {
         // Vérification film
-        if (!$this->movieRepo->exists($movie_id)) {
+        if (!$this->movieRepo->findById((int) $movie_id)) {
             return ["success" => false, "error" => "Le film n'existe pas"];
         }
 
-        // Vérification salle
-        if (!$this->roomRepo->exists($room_id)) {
+        // Fais la même chose pour la salle si ton RoomRepository a aussi un findById
+        if (!$this->roomRepo->findById((int) $room_id)) {
             return ["success" => false, "error" => "La salle n'existe pas"];
         }
 
@@ -51,9 +51,10 @@ class ScreeningService
 
     public function deleteScreening($id)
     {
-        if (!$this->screeningRepo->exists($id)) {
+        if (!$this->screeningRepo->findById((int) $id)) {
             return ["success" => false, "error" => "La séance n'existe pas"];
         }
+
 
         try {
             $this->screeningRepo->delete($id);
@@ -65,17 +66,17 @@ class ScreeningService
 
     public function updateScreening($id, $movie_id, $room_id, $start_time)
     {
-        if (!$this->screeningRepo->exists($id)) {
+        if (!$this->screeningRepo->findById((int) $id)) {
             return ["success" => false, "error" => "La séance n'existe pas"];
         }
 
         // Vérification film
-        if (!$this->movieRepo->exists($movie_id)) {
+        if (!$this->movieRepo->findById((int) $movie_id)) {
             return ["success" => false, "error" => "Le film n'existe pas"];
         }
 
-        // Vérification salle
-        if (!$this->roomRepo->exists($room_id)) {
+        // Fais la même chose pour la salle si ton RoomRepository a aussi un findById
+        if (!$this->roomRepo->findById((int) $room_id)) {
             return ["success" => false, "error" => "La salle n'existe pas"];
         }
 
