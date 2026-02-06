@@ -54,7 +54,6 @@ class RoomRepository
             $room->id
         ]);
     }
-
     public function exists(int $room_id): bool
     {
         // Retourne true si la salle existe dans la table rooms, false sinon

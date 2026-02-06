@@ -104,7 +104,6 @@ release_year, genre, director, created_at, updated_at) VALUES (? , ? , ?, ? , ?,
         $stmt->execute($params);
         return $stmt->fetchAll();
     }
-
     public function findById(int $id): bool
     {
         $sql = "SELECT COUNT(*) FROM movies WHERE id = :id";
