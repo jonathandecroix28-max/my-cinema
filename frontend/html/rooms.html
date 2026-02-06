@@ -48,8 +48,9 @@
                         <form class="form" id="addRoomForm">
                             <h3>Ajouter une salle</h3>
                             <label>Nom</label>
-                            <input class="form-control form-control-sm" type="text" name="title" id="nameRoom" required>
-
+                            <input class="form-control form-control-sm" type="text" list="listRoom" name="title"
+                                id="nameRoom" required>
+                            <datalist id="listRoom"></datalist>
                             <label>Capacité</label>
                             <input class="form-control form-control-sm" type="number" name="capacity" id="capacity"
                                 required>
@@ -83,6 +84,15 @@
             <div class="container mt-4 ">
                 <h2 class="text-center mb-4">Listes des films et salles</h2>
                 <div id="screeningsList" class="d-flex flex-wrap justify-content-center gap-3"></div>
+            </div>
+            <div class="pagination-controls d-flex justify-content-center align-items-center gap-3 mt-4">
+                <button id="btnPrevMovie" class="btn btn-secondary">
+                    <i class="bi bi-chevron-left"></i> Précédent
+                </button>
+                <span id="pageInfoMovie" class="text-white">Page 1 sur 1</span>
+                <button id="btnNextMovie" class="btn btn-secondary">
+                    Suivant <i class="bi bi-chevron-right"></i>
+                </button>
             </div>
         </section>
     </main>

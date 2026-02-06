@@ -656,6 +656,14 @@ export const moviesDatabase = [
         director: "Jordan Peele",
         release_year: "2017"
     },
+    {
+        title: "Employees Leaving the Lumière Factory",
+        description: "Un court métrage muet montrant des employés quittant la célèbre usine de cinéma Lumière à Lyon, en France.",
+        duration: 1,
+        genre: "Documentaire",
+        director: "Auguste et Louis Lumière",
+        release_year: "1895"
+    }
 
 ];
 

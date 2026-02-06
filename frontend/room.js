@@ -1,6 +1,6 @@
 import { els } from './dom-elements.js';
 import { apiFetch, apiDelete, apiPost, apiPut } from './config.js';
-
+import { roomsDatabase } from './room-data.js';
 const { roomSelect, formRoom, listScreenings, stockRoom } = els;
 
 const rooms = await apiFetch('list_rooms');
@@ -238,6 +238,47 @@ if (formRoom) {
             alert(`Erreur lors de l'ajout de la salle : ${error.message}`);
         }
     });
+}
+
+const autoFillForm = (selectedRoom) => {
+    let room = roomsDatabase.find(r => r.name.toLowerCase() === selectedRoom.toLowerCase());
+
+    if (!room) {
+        room = roomsDatabase.find(r => r.name.toLowerCase() === selectedRoom.toLowerCase());
+    }
+
+    if (room) {
+        const capacityField = document.getElementById("capacity")
+        if (capacityField) capacityField.value = room.capacity || "";
+        console.log('Formulaire pertiallement rempli avec:', room.name);
+    }
+}
+
+const nameInput = document.getElementById("nameRoom");
+if (nameInput) {
+    nameInput.addEventListener('input', (e) => {
+        const selectedRoom = e.target.value;
+        if (selectedRoom.trim()) {
+            autoFillForm(selectedRoom);
+        }
+    });
+
+    nameInput.addEventListener('blur', (e) => {
+        const selectedRoom = e.target.value;
+        if (selectedRoom.trim()) {
+            autoFillForm(selectedRoom);
+        }
+    })
+}
+
+const roomDataList = document.getElementById('listRoom');
+
+if (roomDataList && roomsDatabase) {
+    roomsDatabase.forEach(room => {
+        const option = document.createElement('option');
+        option.value = room.name;
+        roomDataList.appendChild(option);
+    })
 }
 
 // Afficher le compteur

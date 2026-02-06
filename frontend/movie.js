@@ -1,25 +1,30 @@
-// ✅ Imports CORRIGÉS (sans movieMetadata)
+// ✅ Imports
 import { apiFetch, truncateText, apiDelete, apiPost, apiPut } from './config.js';
 import { els } from './dom-elements.js';
 import { getPaginatedItems, getPageInfo, isFirstPage, isLastPage, disableButton, enableButton, ITEMS_PER_PAGE } from './pagination.js';
-import { moviesDatabase, genres } from './movie-data.js'; // ✅ SEULEMENT moviesDatabase et genres
+import { moviesDatabase, genres } from './movie-data.js';
 
 const { movieSelect, formMovie, listScreenings, stockMovie } = els;
 
-// ✅ État de la pagination
+// État de la pagination
 let state = {
     currentPage: 1,
     itemsPerPage: ITEMS_PER_PAGE
 };
 
+// Gestion de l'année de sortie
 const year = document.getElementById('movieReleaseYear');
 const currentYear = new Date().getFullYear();
-year.setAttribute('min', '1895');
-year.setAttribute('max', currentYear.toString());
-// Récupération des films depuis l'API
+if (year) {
+    year.setAttribute('min', '1895');
+    year.setAttribute('max', currentYear.toString());
+    year.setAttribute('type', 'number');
+}
+
+// Récupération des films
 const movies = await apiFetch('list_movies');
 
-// ✅ Remplir le select avec les films de la DB
+// Remplir le select
 if (movieSelect && movies.length > 0) {
     movies.forEach(movie => {
         const option = new Option(movie.title, movie.id);
@@ -32,20 +37,20 @@ const btnPrevMovie = document.getElementById('btnPrevMovie');
 const btnNextMovie = document.getElementById('btnNextMovie');
 const pageInfoMovie = document.getElementById('pageInfoMovie');
 
-// Création du tableau
+// ✅ CRÉATION DU TABLEAU - Description tronquée, reste visible
 const movieTable = document.createElement('table');
-movieTable.className = 'table table-bordered table-striped mt-4';
+movieTable.className = 'table table-bordered table-striped mt-4 table-hover';
 movieTable.innerHTML = `
-    <thead>
+    <thead class="table-dark">
         <tr>
-            <th>ID</th>
+            <th class="text-center">ID</th>
             <th>Titre</th>
             <th>Description</th>
-            <th>Durée (min)</th>
+            <th class="text-center">Durée (min)</th>
             <th>Genre</th>
             <th>Réalisateur</th>
-            <th>Année de sortie</th>
-            <th>Actions</th>
+            <th class="text-center">Année</th>
+            <th class="text-center">Actions</th>
         </tr>
     </thead>
     <tbody id="movieTableBody"></tbody>
@@ -57,31 +62,41 @@ if (listScreenings) {
 
 const movieTableBody = document.getElementById('movieTableBody');
 
-// ✅ Fonction pour créer une ligne de tableau
+// ✅ FONCTION POUR CRÉER UNE LIGNE
 const createMovieRow = (movie) => {
     const tr = document.createElement('tr');
     tr.dataset.id = movie.id;
+    
+    // Tronquer UNIQUEMENT la description
+    const shortDescription = truncateText(movie.description, 80);
+    const fullDescription = (movie.description || '').replace(/"/g, '&quot;');
+    
     tr.innerHTML = `
-        <td class="movie-id">${movie.id}</td>
+        <td class="text-center movie-id">${movie.id}</td>
         <td class="movie-title">${movie.title}</td>
-        <td class="movie-description">${truncateText(movie.description, 100)}</td>
-        <td class="movie-duration">${movie.duration}</td>
+        <td class="movie-description" title="${fullDescription}">
+            ${shortDescription}
+        </td>
+        <td class="text-center movie-duration">${movie.duration}</td>
         <td class="movie-genre">${movie.genre}</td>
         <td class="movie-director">${movie.director || 'N/A'}</td>
-        <td class="movie-year">${movie.release_year}</td>
-        <td class="actions">
-            <button class="btn btn-danger btn-sm delete-row-btn" data-id="${movie.id}">
+        <td class="text-center movie-year">${movie.release_year}</td>
+        <td class="text-center actions">
+            <button class="btn btn-sm btn-danger delete-row-btn" data-id="${movie.id}" title="Supprimer">
                 <i class="bi bi-trash"></i>
             </button>
-            <button class="btn btn-warning btn-sm edit-row-btn" data-id="${movie.id}">
-                <i class="bi bi-pencil"></i> Modifier
+            <button class="btn btn-sm btn-warning edit-row-btn" data-id="${movie.id}" title="Modifier">
+                <i class="bi bi-pencil"></i>
+            </button>
+            <button class="btn btn-sm btn-info view-more-btn" data-id="${movie.id}" title="Voir plus">
+                <i class="bi bi-eye"></i>
             </button>
         </td>
     `;
     return tr;
 };
 
-// ✅ Fonction pour afficher les films paginés
+// Fonction pour afficher les films paginés
 const renderMovies = () => {
     if (!movieTableBody) return;
 
@@ -99,7 +114,7 @@ const renderMovies = () => {
     updatePaginationUI();
 };
 
-// ✅ Fonction pour mettre à jour l'UI de pagination
+// Fonction pour mettre à jour l'UI de pagination
 const updatePaginationUI = () => {
     if (pageInfoMovie) {
         pageInfoMovie.textContent = getPageInfo(state.currentPage, movies.length, state.itemsPerPage);
@@ -118,7 +133,7 @@ const updatePaginationUI = () => {
     }
 };
 
-// ✅ Gestionnaires des boutons de pagination
+// Gestionnaires des boutons de pagination
 if (btnPrevMovie) {
     btnPrevMovie.addEventListener('click', () => {
         if (state.currentPage > 1) {
@@ -138,7 +153,7 @@ if (btnNextMovie) {
     });
 }
 
-// ✅ Fonction pour transformer une ligne en mode édition
+// Fonction pour transformer une ligne en mode édition
 const enableEditMode = (row) => {
     const movieId = row.dataset.id;
     const movie = movies.find(m => m.id == movieId);
@@ -153,7 +168,7 @@ const enableEditMode = (row) => {
         `<textarea class="inline-textarea" data-field="description">${movie.description}</textarea>`;
 
     row.querySelector('.movie-duration').innerHTML =
-        `<input type="number" class="inline-input" value="${movie.duration}" data-field="duration">`;
+        `<input type="number" class="inline-input" value="${movie.duration}" data-field="duration" min="1" max="500">`;
 
     row.querySelector('.movie-genre').innerHTML =
         `<input type="text" class="inline-input" list="genreList" value="${movie.genre}" data-field="genre">`;
@@ -162,37 +177,45 @@ const enableEditMode = (row) => {
         `<input type="text" class="inline-input" value="${movie.director || ''}" data-field="director">`;
 
     row.querySelector('.movie-year').innerHTML =
-        `<input type="text" class="inline-input" min="1895" max="${new Date().getFullYear()}" value="${movie.release_year}" data-field="release_year">`;
+        `<input type="number" class="inline-input" min="1895" max="${currentYear}" value="${movie.release_year}" data-field="release_year">`;
 
     row.querySelector('.actions').innerHTML = `
-        <button class="btn btn-success btn-sm save-row-btn" data-id="${movieId}">
-            <i class="bi bi-check-lg"></i> Sauvegarder
+        <button class="btn btn-sm btn-success save-row-btn" data-id="${movieId}" title="Sauvegarder">
+            <i class="bi bi-check-lg"></i>
         </button>
-        <button class="btn btn-secondary btn-sm cancel-edit-btn" data-id="${movieId}">
-            <i class="bi bi-x-lg"></i> Annuler
+        <button class="btn btn-sm btn-secondary cancel-edit-btn" data-id="${movieId}" title="Annuler">
+            <i class="bi bi-x-lg"></i>
         </button>
     `;
 };
 
-// ✅ Fonction pour sauvegarder les modifications
+// Fonction pour sauvegarder les modifications
 const saveMovie = async (row) => {
     const movieId = row.dataset.id;
 
     const movieData = {
         title: row.querySelector('[data-field="title"]').value,
         description: row.querySelector('[data-field="description"]').value,
-        duration: row.querySelector('[data-field="duration"]').value,
+        duration: parseInt(row.querySelector('[data-field="duration"]').value, 10),
         genre: row.querySelector('[data-field="genre"]').value,
         director: row.querySelector('[data-field="director"]').value,
         release_year: row.querySelector('[data-field="release_year"]').value
     };
-    const currentYear = new Date().getFullYear();
-    const releaseYear = parseInt(movieData.release_year.value);
 
-    if (releaseYear < 1895 || releaseYear > currentYear) {
+    // Validation de la date
+    const releaseYear = parseInt(movieData.release_year, 10);
+
+    if (isNaN(releaseYear) || releaseYear < 1895 || releaseYear > currentYear) {
         alert(`L'année doit être comprise entre 1895 et ${currentYear}.`);
-        return; // On arrête l'exécution ici
+        return;
     }
+
+    // Validation de la durée
+    if (isNaN(movieData.duration) || movieData.duration < 1 || movieData.duration > 500) {
+        alert('La durée doit être entre 1 et 500 minutes.');
+        return;
+    }
+
     if (!movieData.title || !movieData.description) {
         alert('Le titre et la description sont obligatoires');
         return;
@@ -218,13 +241,13 @@ const saveMovie = async (row) => {
     }
 };
 
-// ✅ Fonction pour annuler l'édition
-const cancelEdit = (row) => {
+// Fonction pour annuler l'édition
+const cancelEdit = () => {
     renderMovies();
 };
 
 // Fonction de suppression
-const executeDelete = async (type, id, rowElement) => {
+const executeDelete = async (type, id) => {
     try {
         const data = await apiDelete(type, id);
 
@@ -248,7 +271,96 @@ const executeDelete = async (type, id, rowElement) => {
     }
 };
 
-// ✅ Gestionnaire d'événements PRINCIPAL
+// Fonction pour afficher la description complète dans une modal
+const showFullDescription = (movieId) => {
+    const movie = movies.find(m => m.id == movieId);
+    if (!movie) return;
+
+    const modal = document.createElement('div');
+    modal.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.7);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 9999;
+    `;
+    
+    modal.innerHTML = `
+        <div style="
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            max-width: 700px;
+            max-height: 80vh;
+            overflow-y: auto;
+            position: relative;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        ">
+            <button id="closeModal" style="
+                position: absolute;
+                top: 15px;
+                right: 15px;
+                border: none;
+                background: #dc3545;
+                color: white;
+                border-radius: 50%;
+                width: 35px;
+                height: 35px;
+                cursor: pointer;
+                font-size: 20px;
+                font-weight: bold;
+                line-height: 1;
+            ">×</button>
+            
+            <h3 style="margin-top: 0; color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 10px;">
+                ${movie.title}
+            </h3>
+            
+            <div style="margin: 20px 0;">
+                <h5 style="color: #555; margin-bottom: 10px;">Description :</h5>
+                <p style="color: #666; line-height: 1.6; text-align: center; white-space: pre-wrap;">
+                    ${movie.description}
+                </p>
+            </div>
+            
+            <hr style="margin: 20px 0; border: none; border-top: 1px solid #ddd;">
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; font-size: 14px;">
+                <div style="background: #f8f9fa; padding: 10px; border-radius: 5px;">
+                    <strong style="color: #2c3e50;">📽️ Durée :</strong> 
+                    <span style="color: #555;">${movie.duration} minutes</span>
+                </div>
+                <div style="background: #f8f9fa; padding: 10px; border-radius: 5px;">
+                    <strong style="color: #2c3e50;">🎭 Genre :</strong> 
+                    <span style="color: #555;">${movie.genre}</span>
+                </div>
+                <div style="background: #f8f9fa; padding: 10px; border-radius: 5px;">
+                    <strong style="color: #2c3e50;">🎬 Réalisateur :</strong> 
+                    <span style="color: #555;">${movie.director || 'N/A'}</span>
+                </div>
+                <div style="background: #f8f9fa; padding: 10px; border-radius: 5px;">
+                    <strong style="color: #2c3e50;">📅 Année :</strong> 
+                    <span style="color: #555;">${movie.release_year}</span>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal || e.target.id === 'closeModal') {
+            document.body.removeChild(modal);
+        }
+    });
+};
+
+// Gestionnaire d'événements PRINCIPAL
 if (movieTableBody) {
     movieTableBody.addEventListener('click', async (e) => {
         const row = e.target.closest('tr');
@@ -276,22 +388,24 @@ if (movieTableBody) {
             cancelEdit(row);
             return;
         }
+
+        if (e.target.closest('.view-more-btn')) {
+            const movieId = e.target.closest('.view-more-btn').dataset.id;
+            showFullDescription(movieId);
+            return;
+        }
     });
 }
 
-// ✅✨ FONCTIONNALITÉ D'AUTO-COMPLÉTION ✨✅
-// Fonction pour remplir automatiquement le formulaire
+// Fonction d'auto-complétion
 const autoFillForm = (selectedTitle) => {
-    // Chercher d'abord dans la base de données locale (moviesDatabase)
     let movie = moviesDatabase.find(m => m.title.toLowerCase() === selectedTitle.toLowerCase());
 
-    // Si pas trouvé, chercher dans les films de l'API
     if (!movie) {
         movie = movies.find(m => m.title.toLowerCase() === selectedTitle.toLowerCase());
     }
 
     if (movie) {
-        // Remplir tous les champs du formulaire
         const descriptionField = document.getElementById('movieSummary');
         const durationField = document.getElementById('movieDuration');
         const genreField = document.getElementById('movieGenre');
@@ -303,15 +417,13 @@ const autoFillForm = (selectedTitle) => {
         if (genreField) genreField.value = movie.genre || '';
         if (directorField) directorField.value = movie.director || '';
         if (releaseYearField) releaseYearField.value = movie.release_year || '';
-
+        
         console.log('✅ Formulaire auto-rempli avec:', movie.title);
     }
 };
 
-// ✅ Écouter les changements sur le champ titre
 const titleInput = document.getElementById('movieTitle');
 if (titleInput) {
-    // Méthode 1 : Détecter quand l'utilisateur sélectionne dans la datalist
     titleInput.addEventListener('input', (e) => {
         const selectedTitle = e.target.value;
         if (selectedTitle.trim()) {
@@ -319,7 +431,6 @@ if (titleInput) {
         }
     });
 
-    // Méthode 2 : Détecter quand l'utilisateur quitte le champ (blur)
     titleInput.addEventListener('blur', (e) => {
         const selectedTitle = e.target.value;
         if (selectedTitle.trim()) {
@@ -328,31 +439,42 @@ if (titleInput) {
     });
 }
 
-// ✅ Formulaire d'ajout
+// Formulaire d'ajout
 if (formMovie) {
     formMovie.addEventListener('submit', async (e) => {
         e.preventDefault();
 
-        const movieData = {
-            title: document.getElementById('movieTitle').value,
-            description: document.getElementById('movieSummary').value,
-            duration: document.getElementById('movieDuration').value,
-            genre: document.getElementById('movieGenre').value,
-            director: document.getElementById('movieDirector').value,
-            release_year: document.getElementById('movieReleaseYear').value
-        };
+        const titleValue = document.getElementById('movieTitle').value;
+        const descriptionValue = document.getElementById('movieSummary').value;
+        const durationValue = document.getElementById('movieDuration').value;
+        const genreValue = document.getElementById('movieGenre').value;
+        const directorValue = document.getElementById('movieDirector').value;
+        const releaseYearValue = document.getElementById('movieReleaseYear').value;
 
-        const currentYear = new Date().getFullYear();
-        const releaseYear = parseInt(document.getElementById('movieReleaseYear').value);
+        const releaseYear = parseInt(releaseYearValue, 10);
 
-        if (releaseYear < 1895 || releaseYear > currentYear) {
+        if (isNaN(releaseYear) || releaseYear < 1895 || releaseYear > currentYear) {
             alert(`L'année doit être comprise entre 1895 et ${currentYear}.`);
-            return; // On arrête l'exécution ici
+            return;
         }
+
+        const duration = parseInt(durationValue, 10);
+        if (isNaN(duration) || duration < 1 || duration > 500) {
+            alert('La durée doit être entre 1 et 500 minutes.');
+            return;
+        }
+
+        const movieData = {
+            title: titleValue,
+            description: descriptionValue,
+            duration: duration,
+            genre: genreValue,
+            director: directorValue,
+            release_year: releaseYear
+        };
 
         try {
             const result = await apiPost('add_movie', movieData);
-
 
             if (result.success) {
                 alert('Film ajouté avec succès 🎬');
@@ -366,9 +488,8 @@ if (formMovie) {
     });
 }
 
-// ✅ Remplissage de la datalist des genres
+// Remplissage de la datalist des genres
 const genreDatalist = document.getElementById('genreList');
-
 if (genreDatalist && genres) {
     genres.forEach(genreName => {
         const option = document.createElement('option');
@@ -377,9 +498,8 @@ if (genreDatalist && genres) {
     });
 }
 
-// ✅ Remplissage de la datalist des titres (avec les films de moviesDatabase)
+// Remplissage de la datalist des titres
 const titleDataList = document.getElementById('listTitle');
-
 if (titleDataList && moviesDatabase) {
     moviesDatabase.forEach(movie => {
         const option = document.createElement("option");
@@ -393,7 +513,7 @@ if (stockMovie) {
     stockMovie.textContent = `Film${movies.length > 1 ? 's' : ''} en stock: ${movies.length} 🎬`;
 }
 
-// ✅ Affichage initial
+// Affichage initial
 renderMovies();
 
 console.log('✅ movie.js chargé', {
