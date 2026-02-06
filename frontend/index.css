@@ -188,6 +188,8 @@ tr.editing-mode td {
     cursor: pointer;
 }
 
+
+
 /* Responsive : sur petit écran */
 @media (max-width: 1400px) {
     .table {

@@ -56,11 +56,43 @@ release_year, genre, director, created_at, updated_at) VALUES (? , ? , ?, ? , ?,
             $movie->id
         ]);
     }
-    public function exists(int $movie_id): bool
+    // Dans ton MovieRepository
+    // Fichier : MovieRepository.php
+    public function exists(string $title, int $year, ?string $director = null): bool
     {
-        // Retourne true si le film existe dans la table movies, false sinon
-        $stmt = $this->pdo->prepare("SELECT COUNT(*) FROM movies WHERE id = ?");
-        $stmt->execute([$movie_id]);
-        return $stmt->fetchColumn() > 0;
+        $sql = "SELECT COUNT(*) FROM movies WHERE title = :title AND release_year = :year";
+        $params = [
+            ':title' => $title,
+            ':year' => $year
+        ];
+
+        // On n'ajoute la condition réalisateur que si on a reçu la donnée
+        if ($director !== null) {
+            $sql .= " AND director = :director";
+            $params[':director'] = $director;
+        }
+
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute($params);
+        return (int) $stmt->fetchColumn() > 0;
     }
-} ?>
+
+    public function findAll($genre = null, $year = null)
+    {
+        $sql = "SELECT * FROM movies WHERE 1=1"; // Le 1=1 facilite l'ajout de conditions
+        $params = [];
+
+        if ($genre) {
+            $sql .= " AND genre = :genre";
+            $params[':genre'] = $genre;
+        }
+        if ($year) {
+            $sql .= " AND release_year = :year";
+            $params[':year'] = $year;
+        }
+
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute($params);
+        return $stmt->fetchAll();
+    }
+}

@@ -28,6 +28,19 @@ class ScreeningController
             $data['start_time']
         );
 
+
+        if ($data['start_time']) {
+            $inputDate = new DateTime($data['start_time']);
+            $now = new DateTime();
+
+            if ($inputDate < $now) {
+                echo json_encode(["success" => false, "error" => "Impossible de programmer une séance dans le passé !"]);
+                exit;
+            }
+        }
+
+
+
         echo json_encode($result);
     }
 

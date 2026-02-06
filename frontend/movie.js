@@ -66,11 +66,11 @@ const movieTableBody = document.getElementById('movieTableBody');
 const createMovieRow = (movie) => {
     const tr = document.createElement('tr');
     tr.dataset.id = movie.id;
-    
+
     // Tronquer UNIQUEMENT la description
     const shortDescription = truncateText(movie.description, 80);
     const fullDescription = (movie.description || '').replace(/"/g, '&quot;');
-    
+
     tr.innerHTML = `
         <td class="text-center movie-id">${movie.id}</td>
         <td class="movie-title">${movie.title}</td>
@@ -153,6 +153,32 @@ if (btnNextMovie) {
     });
 }
 
+document.getElementById('apply-filters').addEventListener('click', () => {
+    const genre = document.getElementById('filter-genre').value;
+    const year = document.getElementById('filter-year').value;
+
+    // Création de l'objet URLSearchParams pour gérer proprement les paramètres
+    const params = new URLSearchParams({
+        action: 'list_movies'
+    });
+
+    if (genre) params.append('genre', genre);
+    if (year) params.append('year', year);
+
+    // Construction de l'URL finale : backend/index.php?action=list_movies&genre=...
+    const url = `backend/index.php?${params.toString()}`;
+
+    // On appelle ta fonction de chargement globale
+    loadMovies(url);
+});
+
+// Bouton Réinitialiser
+document.getElementById('reset-filters').addEventListener('click', () => {
+    document.getElementById('filter-genre').value = "";
+    document.getElementById('filter-year').value = "";
+    loadMovies('backend/index.php?action=list_movies');
+});
+
 // Fonction pour transformer une ligne en mode édition
 const enableEditMode = (row) => {
     const movieId = row.dataset.id;
@@ -211,8 +237,8 @@ const saveMovie = async (row) => {
     }
 
     // Validation de la durée
-    if (isNaN(movieData.duration) || movieData.duration < 1 || movieData.duration > 500) {
-        alert('La durée doit être entre 1 et 500 minutes.');
+    if (isNaN(movieData.duration) || movieData.duration < 1 || movieData.duration > 85740) {
+        alert('La durée doit être entre 1 et 85740 minutes.');
         return;
     }
 
@@ -289,7 +315,7 @@ const showFullDescription = (movieId) => {
         align-items: center;
         z-index: 9999;
     `;
-    
+
     modal.innerHTML = `
         <div style="
             background: white;
@@ -350,9 +376,9 @@ const showFullDescription = (movieId) => {
             </div>
         </div>
     `;
-    
+
     document.body.appendChild(modal);
-    
+
     modal.addEventListener('click', (e) => {
         if (e.target === modal || e.target.id === 'closeModal') {
             document.body.removeChild(modal);
@@ -417,7 +443,7 @@ const autoFillForm = (selectedTitle) => {
         if (genreField) genreField.value = movie.genre || '';
         if (directorField) directorField.value = movie.director || '';
         if (releaseYearField) releaseYearField.value = movie.release_year || '';
-        
+
         console.log('✅ Formulaire auto-rempli avec:', movie.title);
     }
 };
@@ -459,8 +485,8 @@ if (formMovie) {
         }
 
         const duration = parseInt(durationValue, 10);
-        if (isNaN(duration) || duration < 1 || duration > 500) {
-            alert('La durée doit être entre 1 et 500 minutes.');
+        if (isNaN(duration) || duration < 1 || duration > 85740) {
+            alert('La durée doit être entre 1 et 85740 minutes.');
             return;
         }
 

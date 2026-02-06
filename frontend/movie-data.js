@@ -663,6 +663,22 @@ export const moviesDatabase = [
         genre: "Documentaire",
         director: "Auguste et Louis Lumière",
         release_year: "1895"
+    },
+    {
+        title: 'Logistics',
+        description: "Un documentaire expérimental qui suit le parcours d'un produit de sa fabrication à sa livraison, en temps réel.",
+        duration: 85740,
+        genre: "Documentaire",
+        director: "Erik Pauser, Andreas Pichler",
+        release_year: "2012"
+    },
+    {
+        title: 'Baraka',
+        description: "Un documentaire visuel qui explore les merveilles naturelles et culturelles du monde à travers des images époustouflantes et une bande sonore immersive.",
+        duration: 96,
+        genre: "Documentaire",
+        director: "Ron Fricke",
+        release_year: "1992"
     }
 
 ];
