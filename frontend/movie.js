@@ -1,5 +1,5 @@
 // ✅ Imports
-import { apiFetch, truncateText, apiDelete, apiPost, apiPut } from './config.js';
+import { apiFetch, truncateText, apiDelete, apiPost, apiPut, apiList } from './config.js';
 import { els } from './dom-elements.js';
 import { getPaginatedItems, getPageInfo, isFirstPage, isLastPage, disableButton, enableButton, ITEMS_PER_PAGE } from './pagination.js';
 import { moviesDatabase, genres } from './movie-data.js';
@@ -7,11 +7,16 @@ import { moviesDatabase, genres } from './movie-data.js';
 const { movieSelect, formMovie, listScreenings, stockMovie } = els;
 
 // État de la pagination
+// Remplace ton objet state actuel par celui-ci :
 let state = {
     currentPage: 1,
-    itemsPerPage: ITEMS_PER_PAGE
+    itemsPerPage: ITEMS_PER_PAGE,
+    filters: {
+        genre: '',
+        year: ''
+    },
+    filteredMovies: [] // On stocke les films après filtrage ici
 };
-
 // Gestion de l'année de sortie
 const year = document.getElementById('movieReleaseYear');
 const currentYear = new Date().getFullYear();
@@ -31,6 +36,94 @@ if (movieSelect && movies.length > 0) {
         movieSelect.appendChild(option);
     });
 }
+
+const filterMovies = async () => {
+    try {
+        const genre = document.getElementById('filterGenre').value;
+        const year = document.getElementById('filterYear').value;
+
+        // Mise à jour de l'état
+        state.filters.genre = genre;
+        state.filters.year = year;
+        state.currentPage = 1; // On revient à la page 1
+
+        // Appel API via ta fonction apiList
+        // Note: filters est passé en paramètre query
+        const results = await apiList('movies', {
+            genre: state.filters.genre,
+            year: state.filters.year
+        });
+
+        // Mise à jour de la liste locale utilisée pour le rendu
+        state.filteredMovies = results;
+
+        // Mise à jour du compteur visuel
+        document.getElementById('resultCount').textContent = results.length;
+
+        renderMovies(); // On relance le dessin du tableau
+    } catch (error) {
+        console.error("Erreur lors du filtrage :", error);
+    }
+};
+
+// Fonction pour remplir les menus déroulants à partir des données réelles
+const setupDynamicFilters = (movies) => {
+    const genreSelect = document.getElementById('filterGenre');
+    const yearSelect = document.getElementById('filterYear'); // Si tu veux un select pour l'année aussi
+
+    // On utilise Set pour n'avoir que des valeurs uniques
+    const genres = [...new Set(movies.map(m => m.genre))].sort();
+    const years = [...new Set(movies.map(m => m.release_year))].sort((a, b) => b - a);
+
+    // Remplir le select Genre
+    genreSelect.innerHTML = '<option value="">Tous les genres</option>';
+    genres.forEach(g => {
+        if (g) genreSelect.innerHTML += `<option value="${g}">${g}</option>`;
+    });
+
+    // Remplir le select Année (optionnel, ou garder un input number)
+    if (yearSelect) {
+        yearSelect.innerHTML = '<option value="">Toutes les années</option>';
+        years.forEach(y => {
+            yearSelect.innerHTML += `<option value="${y}">${y}</option>`;
+        });
+    }
+};
+
+
+
+// Au chargement initial de la page
+const init = async () => {
+    // 1. On récupère tout pour les filtres et l'affichage initial
+    const allMovies = await apiFetch('list_movies');
+
+    // 2. On initialise nos listes de travail
+    state.filteredMovies = allMovies;
+
+    // 3. On remplit les dropdowns (genre/année) dynamiquement
+    setupDynamicFilters(allMovies);
+
+    // 4. On dessine le tableau
+    renderMovies();
+
+    // 5. Compteur initial
+    document.getElementById('resultCount').textContent = allMovies.length;
+};
+init();
+// On récupère le bouton "Appliquer" que nous avons créé en Bootstrap
+// Bouton Appliquer
+document.getElementById('apply-filters').addEventListener('click', filterMovies);
+
+// Bouton Réinitialiser
+document.getElementById('resetFilters').addEventListener('click', () => {
+    document.getElementById('filterGenre').value = "";
+    document.getElementById('filterYear').value = "";
+    filterMovies(); // Relance la recherche à vide
+});
+
+// Facultatif : Filtrage automatique au changement
+document.getElementById('filterGenre').addEventListener('change', filterMovies);
+document.getElementById('filterYear').addEventListener('change', filterMovies);
 
 // Boutons de pagination
 const btnPrevMovie = document.getElementById('btnPrevMovie');
@@ -101,17 +194,20 @@ const renderMovies = () => {
     if (!movieTableBody) return;
 
     movieTableBody.innerHTML = '';
-    const paginatedMovies = getPaginatedItems(movies, state.currentPage, state.itemsPerPage);
+
+    // On utilise la liste filtrée
+    const paginatedMovies = getPaginatedItems(state.filteredMovies, state.currentPage, state.itemsPerPage);
 
     if (paginatedMovies.length > 0) {
         paginatedMovies.forEach(movie => {
             movieTableBody.appendChild(createMovieRow(movie));
         });
     } else {
-        movieTableBody.innerHTML = '<tr><td colspan="8" class="text-center">Aucun film trouvé</td></tr>';
+        movieTableBody.innerHTML = '<tr><td colspan="8" class="text-center py-4 text-muted">Aucun film ne correspond à ces critères</td></tr>';
     }
 
-    updatePaginationUI();
+    // Mise à jour de la pagination avec la longueur de la liste filtrée
+    updatePaginationUI(state.filteredMovies.length);
 };
 
 // Fonction pour mettre à jour l'UI de pagination

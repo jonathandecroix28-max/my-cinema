@@ -9,64 +9,130 @@ class RoomRepository
         $this->pdo = $pdo;
     }
 
+    /**
+     * Ajouter une nouvelle salle
+     */
+    public function add($room)
+    {
+        $stmt = $this->pdo->prepare("
+            INSERT INTO rooms (name, capacity, type, active, created_at)
+            VALUES (:name, :capacity, :type, :active, :created_at)
+        ");
+        $stmt->execute([
+            ':name' => $room->name,
+            ':capacity' => $room->capacity,
+            ':type' => $room->type,
+            ':active' => $room->active,
+            ':created_at' => $room->created_at,
+        ]);
+        return $this->pdo->lastInsertId();
+    }
+
+    /**
+     * Récupérer toutes les salles
+     */
     public function getAll()
     {
-        $stmt = $this->pdo->query("SELECT * FROM rooms ");
-        return $stmt->fetchAll(PDO::FETCH_CLASS, 'Rooms');
+        $stmt = $this->pdo->query("SELECT * FROM rooms ORDER BY name ASC");
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    public function add(Rooms $room)
+    /**
+     * Récupérer uniquement les salles actives
+     */
+    public function getActiveRooms()
     {
-        $stmt = $this->pdo->prepare(" INSERT INTO rooms (name, capacity, type, active, created_at, updated_at) VALUES (? , ? , ? , ? , ? , ? )");
-        $stmt->execute([
-            $room->name,
-            $room->capacity,
-            $room->type,
-            $room->active,
-            $room->created_at,
-            $room->updated_at
-        ]);
+        $stmt = $this->pdo->query("SELECT * FROM rooms WHERE active = 1 ORDER BY name ASC");
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    public function find($id)
-    {
-        $stmt = $this->pdo->prepare("SELECT * FROM rooms WHERE id = ?");
-        $stmt->execute([$id]);
-        $stmt->setFetchMode(PDO::FETCH_CLASS, 'Rooms');
-        return $stmt->fetch();
-    }
-
+    /**
+     * Supprimer une salle
+     */
     public function delete($id)
     {
-        $stmt = $this->pdo->prepare("DELETE FROM rooms WHERE id = ?");
-        $stmt->execute([$id]);
-    }
-
-    public function update(Rooms $room)
-    {
-        $stmt = $this->pdo->prepare(" UPDATE rooms SET name = ?, capacity = ?, type = ?, active = ?, updated_at = ? WHERE id = ? ");
-        $stmt->execute([
-            $room->name,
-            $room->capacity,
-            $room->type,
-            $room->active,
-            $room->updated_at,
-            $room->id
-        ]);
-    }
-    public function exists(int $room_id): bool
-    {
-        // Retourne true si la salle existe dans la table rooms, false sinon
-        $stmt = $this->pdo->prepare("SELECT COUNT(*) FROM rooms WHERE id = ?");
-        $stmt->execute([$room_id]);
-        return $stmt->fetchColumn() > 0;
-    }
-
-    public function findById(int $id): bool
-    {
-        $sql = "SELECT COUNT(*) FROM rooms WHERE id = :id";
-        $stmt = $this->pdo->prepare($sql);
+        $stmt = $this->pdo->prepare("DELETE FROM rooms WHERE id = :id");
         $stmt->execute([':id' => $id]);
-        return (int) $stmt->fetchColumn() > 0;
+        return $stmt->rowCount() > 0;
+    }
+
+    /**
+     * Mettre à jour une salle
+     */
+    public function update($id, $name, $capacity, $type, $active)
+    {
+        $stmt = $this->pdo->prepare("
+            UPDATE rooms 
+            SET name = :name, capacity = :capacity, type = :type, active = :active
+            WHERE id = :id
+        ");
+        $stmt->execute([
+            ':name' => $name,
+            ':capacity' => $capacity,
+            ':type' => $type,
+            ':active' => $active,
+            ':id' => $id
+        ]);
+        return $stmt->rowCount() > 0;
+    }
+
+    /**
+     * Récupérer une salle par son ID
+     */
+    public function findById($id)
+    {
+        $stmt = $this->pdo->prepare("SELECT * FROM rooms WHERE id = :id");
+        $stmt->execute([':id' => $id]);
+        return $stmt->fetch(PDO::FETCH_ASSOC);
+    }
+
+    /**
+     * Vérifier si une salle existe par son ID
+     */
+    public function existsById($id)
+    {
+        $stmt = $this->pdo->prepare("SELECT id FROM rooms WHERE id = :id");
+        $stmt->execute([':id' => $id]);
+        return $stmt->fetch() ? true : false;
+    }
+
+    /**
+     * ✅ Vérifier si une salle existe par son nom
+     * 
+     * @param string $name Nom de la salle
+     * @param int|null $excludeId ID à exclure (pour l'update)
+     * @return bool true si la salle existe, false sinon
+     */
+    public function existsByName($name, $excludeId = null)
+    {
+        $sql = "SELECT id FROM rooms WHERE name = :name";
+
+        if ($excludeId !== null) {
+            $sql .= " AND id != :exclude_id";
+        }
+
+        $stmt = $this->pdo->prepare($sql);
+        $params = [':name' => $name];
+
+        if ($excludeId !== null) {
+            $params[':exclude_id'] = $excludeId;
+        }
+
+        $stmt->execute($params);
+        return $stmt->fetch() ? true : false;
+    }
+
+    /**
+     * ✅ Vérifier si une salle est active
+     * 
+     * @param int $id ID de la salle
+     * @return bool true si la salle est active, false sinon
+     */
+    public function isActive($id)
+    {
+        $stmt = $this->pdo->prepare("SELECT active FROM rooms WHERE id = :id");
+        $stmt->execute([':id' => $id]);
+        $result = $stmt->fetch(PDO::FETCH_ASSOC);
+        return $result && $result['active'] == 1;
     }
 }

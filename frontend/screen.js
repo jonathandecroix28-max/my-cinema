@@ -1,5 +1,5 @@
 // ✅ Imports
-import { apiFetch, formatDate, apiDelete, apiPost, apiPut } from './config.js';
+import { apiFetch, getCurrentDateTimeLocal, formatDate, apiDelete, apiPost, apiPut, sqlToDateTimeLocal } from './config.js';
 import { els } from './dom-elements.js';
 import { getPaginatedItems, getPageInfo, isFirstPage, isLastPage, disableButton, enableButton, ITEMS_PER_PAGE } from './pagination.js';
 
@@ -32,10 +32,23 @@ if (movieSelect && movies.length > 0) {
 }
 
 if (roomSelect && rooms.length > 0) {
-    rooms.forEach(room => {
-        const option = new Option(`${room.name} (${room.capacity} places - ${room.type})`, room.id);
+    // ✅ Filtrer pour ne garder que les salles actives
+    const activeRooms = rooms.filter(room => room.active == 1);
+
+    if (activeRooms.length === 0) {
+        // Si aucune salle active, afficher un message
+        const option = new Option('Aucune salle active disponible', '');
+        option.disabled = true;
         roomSelect.appendChild(option);
-    });
+    } else {
+        activeRooms.forEach(room => {
+            const option = new Option(
+                `${room.name} (${room.capacity} places - ${room.type})`,
+                room.id
+            );
+            roomSelect.appendChild(option);
+        });
+    }
 }
 
 // Fonctions utilitaires
@@ -166,8 +179,9 @@ const enableEditMode = (row) => {
     row.classList.add('editing-mode');
 
     row.querySelector(".screening-startime").innerHTML =
-        `<input type="datetime-local" class="inline-input" value="${new Date(screening.start_time).toISOString().slice(0, 16)}" data-field="start_time">`;
-
+        `<input type="datetime-local" class="inline-input" 
+                value="${sqlToDateTimeLocal(screening.start_time)}" 
+                data-field="start_time">`;
     row.querySelector(".screening-movie-id").innerHTML =
         `<select class="inline-select" data-field="movie_id">
             ${movies.map(movie => `<option value="${movie.id}"${movie.id == screening.movie_id ? ' selected' : ''}>${movie.title}</option>`).join('')}
@@ -400,23 +414,27 @@ if (screeningForm) {
 const startTimeInput = document.getElementById('startTime');
 
 if (startTimeInput) {
-    const now = new Date();
+    const minDateTime = getCurrentDateTimeLocal();
 
-    // On formate la date en YYYY-MM-DDTHH:mm (ex: 2026-02-06T14:30)
-    const year = now.getFullYear();
-    const month = String(now.getMonth() + 1).padStart(2, '0');
-    const day = String(now.getDate()).padStart(2, '0');
-    const hours = String(now.getHours()).padStart(2, '0');
-    const minutes = String(now.getMinutes()).padStart(2, '0');
-
-    const minDateTime = `${year}-${month}-${day}T${hours}:${minutes}`;
-
-    // Applique la limite min : l'utilisateur ne peut plus choisir avant "maintenant"
+    // ✅ Empêcher la sélection de dates passées dans le formulaire d'ajout
     startTimeInput.setAttribute('min', minDateTime);
 
-    // Optionnel : on peut aussi pré-remplir le champ avec cette valeur
-    startTimeInput.value = minDateTime;
+    // ✅ Optionnel : Pré-remplir avec l'heure actuelle + 1h (plus pratique)
+    const oneHourLater = new Date();
+    oneHourLater.setHours(oneHourLater.getHours() + 1);
+    const year = oneHourLater.getFullYear();
+    const month = String(oneHourLater.getMonth() + 1).padStart(2, '0');
+    const day = String(oneHourLater.getDate()).padStart(2, '0');
+    const hours = String(oneHourLater.getHours()).padStart(2, '0');
+    const minutes = '00'; // Arrondir à l'heure pile
+    startTimeInput.value = `${year}-${month}-${day}T${hours}:${minutes}`;
 }
+
+
+
+
+// Remplir le select des salles (SEULEMENT les actives)
+
 // Afficher le compteur
 if (stockScreening) {
     stockScreening.textContent = `Séance${screenings.length > 1 ? 's' : ''} programmée${screenings.length > 1 ? 's' : ''} : ${screenings.length} 🎟️`;

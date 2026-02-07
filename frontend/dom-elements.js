@@ -17,5 +17,3 @@ export const arrowPages = {
     pageInfo: document.getElementById('page-info')
 };
 
-
-    

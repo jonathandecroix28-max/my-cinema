@@ -1,105 +1,230 @@
 <?php
-
 class RoomController
 {
-    private $repository;
+    private $service;
 
     public function __construct()
     {
-        $this->repository = new RoomRepository(); // repository créé par la suite
+        $this->service = new RoomService();
     }
 
+    /**
+     * Lister toutes les salles
+     */
     public function list()
-    { // Méthode appelée par le fichier index . php
-        echo json_encode($this->repository->getAll());
-    }
-
-    public function add()
     {
-        $data = json_decode(file_get_contents('php://input'), true); // Pour les requêtes POST/PUT
-        if (!isset($data['name']) || !isset($data['capacity']) || !isset($data['type']) || !isset($data['active'])) {
-            echo json_encode(["success" => false, "error" => "Données manquantes"]);
-            return;
-        }
-        $room = new Rooms();
-        $room->name = $data['name'];
-        $room->capacity = $data['capacity'];
-        $room->type = $data['type'];
-        $room->active = $data['active'];
-        $room->created_at = date('Y-m-d H:i:s');
-        $room->updated_at = date('Y-m-d H:i:s');
-
-        try {
-            $this->repository->add($room);
-            echo json_encode(["success" => true, "message" => "Salle ajoutée !"]);
-        } catch (Exception $e) {
-            http_response_code(500);
-            echo json_encode(["success" => false, "error" => "Erreur DB: " . $e->getMessage()]);
-        }
-
+        echo json_encode($this->service->listRooms());
     }
 
+    /**
+     * ✅ NOUVEAU : Récupérer une salle par son ID
+     */
     public function get()
     {
+        // ✅ Vérifier que l'ID est présent
         $id = $_GET['id'] ?? null;
-        if ($id === null) {
-            echo json_encode(["error" => "ID manquant"]);
+
+        if (!$id) {
+            echo json_encode([
+                "success" => false, 
+                "error" => "ID manquant"
+            ]);
             return;
         }
 
-        $room = $this->repository->find($id);
+        // ✅ Valider que l'ID est un nombre positif
+        if (!is_numeric($id) || $id < 1) {
+            echo json_encode([
+                "success" => false, 
+                "error" => "ID invalide. Doit être un nombre positif"
+            ]);
+            return;
+        }
+
+        // ✅ Convertir en entier pour sécurité
+        $id = (int) $id;
+
+        // ✅ Appeler le service
+        $room = $this->service->getRoomById($id);
+        
         if ($room) {
             echo json_encode($room);
         } else {
-            echo json_encode(["error" => "Salle non trouvée"]);
+            echo json_encode([
+                "success" => false, 
+                "error" => "Salle introuvable"
+            ]);
         }
     }
 
+    /**
+     * Ajouter une nouvelle salle
+     */
+    public function add()
+    {
+        $data = json_decode(file_get_contents('php://input'), true);
+
+        // ✅ Vérification des données obligatoires
+        if (!isset($data['name'], $data['capacity'], $data['type'], $data['active'])) {
+            echo json_encode([
+                "success" => false, 
+                "error" => "Données manquantes. Champs requis : name, capacity, type, active"
+            ]);
+            return;
+        }
+
+        // ✅ Nettoyer et valider le nom
+        $name = trim($data['name']);
+        if (empty($name)) {
+            echo json_encode([
+                "success" => false, 
+                "error" => "Le nom de la salle ne peut pas être vide"
+            ]);
+            return;
+        }
+
+        // ✅ Convertir et valider la capacité
+        $capacity = (int) $data['capacity'];
+        if ($capacity < 1 || $capacity > 1000) {
+            echo json_encode([
+                "success" => false, 
+                "error" => "La capacité doit être entre 1 et 1000 (reçu : {$capacity})"
+            ]);
+            return;
+        }
+
+        // ✅ Normaliser et valider le type (convertir en majuscules)
+        $type = strtoupper(trim($data['type']));
+        $allowedTypes = ['2D', '3D', 'IMAX'];
+        if (!in_array($type, $allowedTypes)) {
+            echo json_encode([
+                "success" => false, 
+                "error" => "Type invalide. Valeurs autorisées : 2D, 3D, IMAX (reçu : {$data['type']})"
+            ]);
+            return;
+        }
+
+        // ✅ Convertir active en entier (0 ou 1)
+        $active = (int) $data['active'];
+        if (!in_array($active, [0, 1])) {
+            echo json_encode([
+                "success" => false, 
+                "error" => "Active invalide. Valeurs autorisées : 0 ou 1 (reçu : {$data['active']})"
+            ]);
+            return;
+        }
+
+        // ✅ Appeler le service
+        $result = $this->service->addRoom($name, $capacity, $type, $active);
+        echo json_encode($result);
+    }
+
+    /**
+     * Supprimer une salle
+     */
     public function remove()
     {
         $id = $_GET['id'] ?? null;
-        if ($id === null) {
-            echo json_encode(["error" => "ID manquant"]);
+
+        // ✅ Vérifications de sécurité
+        if (!$id) {
+            echo json_encode([
+                "success" => false, 
+                "error" => "ID manquant"
+            ]);
             return;
         }
 
-        try {
-            $this->repository->delete($id);
-            echo json_encode(["success" => true, "message" => "Salle supprimée !"]);
-        } catch (Exception $e) {
-            echo json_encode(["success" => false, "error" => "Erreur lors de la suppression de la salle."]);
+        if (!is_numeric($id) || $id < 1) {
+            echo json_encode([
+                "success" => false, 
+                "error" => "ID invalide"
+            ]);
+            return;
         }
+
+        $result = $this->service->deleteRoom((int) $id);
+        echo json_encode($result);
     }
 
+    /**
+     * Mettre à jour une salle
+     */
     public function update()
     {
         $id = $_GET['id'] ?? null;
-        if ($id === null) {
-            echo json_encode(["error" => "ID manquant"]);
+
+        // ✅ Vérifications de sécurité sur l'ID
+        if (!$id) {
+            echo json_encode([
+                "success" => false, 
+                "error" => "ID manquant"
+            ]);
             return;
         }
 
-        $data = json_decode(file_get_contents('php://input'), true); // Pour les requêtes POST/PUT
-
-        $room = $this->repository->find($id);
-        if (!$room) {
-            echo json_encode(["error" => "Salle non trouvée"]);
+        if (!is_numeric($id) || $id < 1) {
+            echo json_encode([
+                "success" => false, 
+                "error" => "ID invalide"
+            ]);
             return;
         }
 
-        // Mettre à jour les propriétés de la salle
-        $room->name = $data['name'] ?? $room->name;
-        $room->capacity = $data['capacity'] ?? $room->capacity;
-        $room->type = $data['type'] ?? $room->type;
-        $room->active = $data['active'] ?? $room->active;
-        $room->updated_at = date('Y-m-d H:i:s');
+        $data = json_decode(file_get_contents('php://input'), true);
 
-        try {
-            $this->repository->update($room);
-            echo json_encode(["success" => true, "message" => "Salle mise à jour !"]);
-        } catch (Exception $e) {
-            echo json_encode(["success" => false, "error" => "Erreur lors de la mise à jour de la salle."]);
+        // ✅ Vérification des données obligatoires
+        if (!isset($data['name'], $data['capacity'], $data['type'], $data['active'])) {
+            echo json_encode([
+                "success" => false, 
+                "error" => "Données manquantes. Champs requis : name, capacity, type, active"
+            ]);
+            return;
         }
+
+        // ✅ Nettoyer et valider le nom
+        $name = trim($data['name']);
+        if (empty($name)) {
+            echo json_encode([
+                "success" => false, 
+                "error" => "Le nom de la salle ne peut pas être vide"
+            ]);
+            return;
+        }
+
+        // ✅ Convertir et valider la capacité
+        $capacity = (int) $data['capacity'];
+        if ($capacity < 1 || $capacity > 1000) {
+            echo json_encode([
+                "success" => false, 
+                "error" => "La capacité doit être entre 1 et 1000"
+            ]);
+            return;
+        }
+
+        // ✅ Normaliser et valider le type
+        $type = strtoupper(trim($data['type']));
+        $allowedTypes = ['2D', '3D', 'IMAX'];
+        if (!in_array($type, $allowedTypes)) {
+            echo json_encode([
+                "success" => false, 
+                "error" => "Type invalide. Valeurs autorisées : 2D, 3D, IMAX"
+            ]);
+            return;
+        }
+
+        // ✅ Convertir active en entier
+        $active = (int) $data['active'];
+        if (!in_array($active, [0, 1])) {
+            echo json_encode([
+                "success" => false, 
+                "error" => "Active invalide. Valeurs autorisées : 0 ou 1"
+            ]);
+            return;
+        }
+
+        // ✅ Appeler le service
+        $result = $this->service->updateRoom((int) $id, $name, $capacity, $type, $active);
+        echo json_encode($result);
     }
-    // Autres méthodes correspondant aux autres routes API .
 }

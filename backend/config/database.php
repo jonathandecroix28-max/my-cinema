@@ -5,6 +5,7 @@
  */
 
 // Charger le fichier .env (à la racine du projet)
+date_default_timezone_set('Europe/Paris'); // Assurez-vous que le fuseau horaire est défini pour éviter les warnings liés à la date
 $envFile = __DIR__ . '/../../.env';
 
 if (!file_exists($envFile)) {
@@ -33,7 +34,11 @@ try {
         PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
         PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
         PDO::ATTR_EMULATE_PREPARES => false,
+
+
     ]);
+
+    $pdo->exec("SET time_zone = '+01:00'");
 } catch (PDOException $e) {
     // Logger l'erreur (ne pas exposer les détails en production)
     error_log("Database connection error: " . $e->getMessage());

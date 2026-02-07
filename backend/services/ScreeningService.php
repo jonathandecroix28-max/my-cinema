@@ -14,33 +14,51 @@ class ScreeningService
 
     public function addScreening($movie_id, $room_id, $start_time)
     {
-        // Vérification film
+        // ✅ Vérification film
         if (!$this->movieRepo->findById((int) $movie_id)) {
-            return ["success" => false, "error" => "Le film n'existe pas"];
+            return ["success" => false, "error" => "Le film sélectionné n'existe pas"];
         }
 
-        // Fais la même chose pour la salle si ton RoomRepository a aussi un findById
+        // ✅ Vérification salle existe
         if (!$this->roomRepo->findById((int) $room_id)) {
-            return ["success" => false, "error" => "La salle n'existe pas"];
+            return ["success" => false, "error" => "La salle sélectionnée n'existe pas"];
         }
 
-        // Conflits
+        // ✅ NOUVEAU : Vérification que la salle est active
+        if (!$this->roomRepo->isActive((int) $room_id)) {
+            return [
+                "success" => false,
+                "error" => "La salle sélectionnée est actuellement inactive. Impossible de programmer une séance."
+            ];
+        }
+
+        // ✅ Vérification format date
+        try {
+            new DateTime($start_time);
+        } catch (Exception $e) {
+            return ["success" => false, "error" => "Format de date invalide"];
+        }
+
+        // ✅ Vérification conflits
         if ($this->screeningRepo->checkConflicts($movie_id, $room_id, $start_time)) {
-            return ["success" => false, "error" => "Conflit avec une séance existante"];
+            return [
+                "success" => false,
+                "error" => "Conflit avec une séance existante dans cette salle. Choisissez un autre horaire."
+            ];
         }
 
-        // Création de l’objet Screening
+        // Création de l'objet Screening
         $screening = new Screening();
-        $screening->movie_id = $movie_id;
-        $screening->room_id = $room_id;
+        $screening->movie_id = (int) $movie_id;
+        $screening->room_id = (int) $room_id;
         $screening->start_time = $start_time;
         $screening->created_at = date('Y-m-d H:i:s');
 
         try {
             $this->screeningRepo->add($screening);
-            return ["success" => true, "message" => "Séance ajoutée !"];
+            return ["success" => true, "message" => "Séance programmée avec succès !"];
         } catch (Exception $e) {
-            return ["success" => false, "error" => $e->getMessage()];
+            return ["success" => false, "error" => "Erreur lors de l'ajout : " . $e->getMessage()];
         }
     }
 
@@ -55,12 +73,11 @@ class ScreeningService
             return ["success" => false, "error" => "La séance n'existe pas"];
         }
 
-
         try {
             $this->screeningRepo->delete($id);
-            return ["success" => true, "message" => "Séance supprimée !"];
+            return ["success" => true, "message" => "Séance supprimée avec succès !"];
         } catch (Exception $e) {
-            return ["success" => false, "error" => $e->getMessage()];
+            return ["success" => false, "error" => "Erreur lors de la suppression : " . $e->getMessage()];
         }
     }
 
@@ -70,26 +87,44 @@ class ScreeningService
             return ["success" => false, "error" => "La séance n'existe pas"];
         }
 
-        // Vérification film
+        // ✅ Vérification film
         if (!$this->movieRepo->findById((int) $movie_id)) {
-            return ["success" => false, "error" => "Le film n'existe pas"];
+            return ["success" => false, "error" => "Le film sélectionné n'existe pas"];
         }
 
-        // Fais la même chose pour la salle si ton RoomRepository a aussi un findById
+        // ✅ Vérification salle existe
         if (!$this->roomRepo->findById((int) $room_id)) {
-            return ["success" => false, "error" => "La salle n'existe pas"];
+            return ["success" => false, "error" => "La salle sélectionnée n'existe pas"];
         }
 
-        // Conflits
-        if ($this->screeningRepo->checkConflicts($movie_id, $room_id, $start_time)) {
-            return ["success" => false, "error" => "Conflit avec une séance existante"];
+        // ✅ NOUVEAU : Vérification que la salle est active
+        if (!$this->roomRepo->isActive((int) $room_id)) {
+            return [
+                "success" => false,
+                "error" => "La salle sélectionnée est actuellement inactive. Impossible de programmer une séance."
+            ];
+        }
+
+        // ✅ Vérification format date
+        try {
+            new DateTime($start_time);
+        } catch (Exception $e) {
+            return ["success" => false, "error" => "Format de date invalide"];
+        }
+
+        // ✅ Vérification conflits (en excluant la séance en cours de modification)
+        if ($this->screeningRepo->checkConflicts($movie_id, $room_id, $start_time, $id)) {
+            return [
+                "success" => false,
+                "error" => "Conflit avec une autre séance dans cette salle. Choisissez un autre horaire."
+            ];
         }
 
         try {
             $this->screeningRepo->update($id, $movie_id, $room_id, $start_time);
-            return ["success" => true, "message" => "Séance mise à jour !"];
+            return ["success" => true, "message" => "Séance mise à jour avec succès !"];
         } catch (Exception $e) {
-            return ["success" => false, "error" => $e->getMessage()];
+            return ["success" => false, "error" => "Erreur lors de la mise à jour : " . $e->getMessage()];
         }
     }
 }

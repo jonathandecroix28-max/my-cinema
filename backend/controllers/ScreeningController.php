@@ -17,29 +17,38 @@ class ScreeningController
     {
         $data = json_decode(file_get_contents('php://input'), true);
 
+        // ✅ Vérification des données
         if (!isset($data['movie_id'], $data['room_id'], $data['start_time'])) {
             echo json_encode(["success" => false, "error" => "Données manquantes"]);
             return;
         }
 
+        // ✅ CORRECTION 2 : Vérifier la date AVANT d'appeler le service
+        try {
+            $inputDate = new DateTime($data['start_time']);
+            $now = new DateTime();
+
+            if ($inputDate < $now) {
+                echo json_encode([
+                    "success" => false,
+                    "error" => "Impossible de programmer une séance dans le passé !"
+                ]);
+                return; // ✅ RETURN au lieu de EXIT
+            }
+        } catch (Exception $e) {
+            echo json_encode([
+                "success" => false,
+                "error" => "Format de date invalide"
+            ]);
+            return;
+        }
+
+        // ✅ Appel du service APRÈS validation
         $result = $this->service->addScreening(
             $data['movie_id'],
             $data['room_id'],
             $data['start_time']
         );
-
-
-        if ($data['start_time']) {
-            $inputDate = new DateTime($data['start_time']);
-            $now = new DateTime();
-
-            if ($inputDate < $now) {
-                echo json_encode(["success" => false, "error" => "Impossible de programmer une séance dans le passé !"]);
-                exit;
-            }
-        }
-
-
 
         echo json_encode($result);
     }
@@ -59,7 +68,6 @@ class ScreeningController
 
     public function update()
     {
-        // ✅ CORRECTION : Récupérer l'ID depuis $_GET comme les autres contrôleurs
         $id = $_GET['id'] ?? null;
 
         if (!$id) {
@@ -74,8 +82,28 @@ class ScreeningController
             return;
         }
 
+        // ✅ CORRECTION 3 : Validation de la date pour l'update aussi
+        try {
+            $inputDate = new DateTime($data['start_time']);
+            $now = new DateTime();
+
+            if ($inputDate < $now) {
+                echo json_encode([
+                    "success" => false,
+                    "error" => "Impossible de programmer une séance dans le passé !"
+                ]);
+                return;
+            }
+        } catch (Exception $e) {
+            echo json_encode([
+                "success" => false,
+                "error" => "Format de date invalide"
+            ]);
+            return;
+        }
+
         $result = $this->service->updateScreening(
-            $id,  // ✅ Utilise l'ID de $_GET
+            $id,
             $data['movie_id'],
             $data['room_id'],
             $data['start_time']

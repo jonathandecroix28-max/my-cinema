@@ -9,8 +9,10 @@ export const API_BASE_URL = '/my-cinema/backend/index.php';
 
 // 1. Fonction d'appel API générique
 export const apiFetch = async (action, options = {}) => {
-    const url = `${API_BASE_URL}?action=${action}`;
+    const queryString = new URLSearchParams(options.query || {}).toString();
+    const url = `${API_BASE_URL}?action=${action}${queryString ? `&${queryString}` : ''}`;
     const response = await fetch(url, options);
+
     if (!response.ok) {
         const error = await response.json();
         throw new Error(error.message || 'Erreur API');
@@ -59,4 +61,30 @@ export const apiPut = async (type, id, data) => {
     });
 }
 
+export const apiGet = async (type, id) => {
+    return await apiFetch(`get_${type}&id=${id}`, { id });
+};
+
+export const apiList = async (type, filters = {}) => {
+    return await apiFetch(`list_${type}`, { query: filters });
+};
+
+// ✅ Fonction pour obtenir la date/heure actuelle au format datetime-local
+export const getCurrentDateTimeLocal = () => {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    const hours = String(now.getHours()).padStart(2, '0');
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    return `${year}-${month}-${day}T${hours}:${minutes}`;
+};
+
+export const sqlToDateTimeLocal = (sqlDateTime) => {
+    if (!sqlDateTime) return '';
+    const [date, time] = sqlDateTime.split(' ');
+    if (!time) return date;
+    const [h, m] = time.split(':');
+    return `${date}T${h}:${m}`;
+};
 
