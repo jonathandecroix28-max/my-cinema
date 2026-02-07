@@ -1,149 +1,102 @@
-// ✅ Imports
-import { apiFetch, truncateText, apiDelete, apiPost, apiPut, apiList } from './config.js';
+// ==========================================
+// MOVIE.JS - VERSION CORRIGÉE ET OPTIMISÉE
+// ==========================================
+
+// ==========================================
+// 📦 IMPORTS
+// ==========================================
+import {
+    apiFetch,
+    truncateText,
+    apiDelete,
+    apiPost,
+    apiPut,
+    apiList
+} from './config.js';
+
 import { els } from './dom-elements.js';
-import { getPaginatedItems, getPageInfo, isFirstPage, isLastPage, disableButton, enableButton, ITEMS_PER_PAGE } from './pagination.js';
+
+import {
+    getPaginatedItems,
+    getPageInfo,
+    isFirstPage,
+    isLastPage,
+    disableButton,
+    enableButton,
+    ITEMS_PER_PAGE
+} from './pagination.js';
+
 import { moviesDatabase, genres } from './movie-data.js';
 
+// ==========================================
+// 🌐 VARIABLES GLOBALES
+// ==========================================
 const { movieSelect, formMovie, listScreenings, stockMovie } = els;
 
-// État de la pagination
-// Remplace ton objet state actuel par celui-ci :
+// Liste complète des films (source de vérité)
+let movies = [];
+
+// État de l'application
 let state = {
     currentPage: 1,
     itemsPerPage: ITEMS_PER_PAGE,
     filters: {
         genre: '',
-        year: ''
+        year: '',
+        search: ''
     },
-    filteredMovies: [] // On stocke les films après filtrage ici
+    filteredMovies: []  // Films après application des filtres
 };
-// Gestion de l'année de sortie
-const year = document.getElementById('movieReleaseYear');
+
+// ==========================================
+// 🎯 ÉLÉMENTS DOM
+// ==========================================
 const currentYear = new Date().getFullYear();
+
+// Champs du formulaire
+const titleInput = document.getElementById('movieTitle');
+const year = document.getElementById('movieReleaseYear');
+
+// Filtres
+const searchInput = document.getElementById('searchMovie');
+const filterGenre = document.getElementById('filterGenre');
+const filterYear = document.getElementById('filterYear');
+const resetButton = document.getElementById('resetFilters');
+const applyFiltersBtn = document.getElementById('apply-filters');
+const resultCount = document.getElementById('resultCount');
+
+// Pagination
+const btnPrevMovie = document.getElementById('btnPrevMovie');
+const btnNextMovie = document.getElementById('btnNextMovie');
+const pageInfoMovie = document.getElementById('pageInfoMovie');
+
+// ==========================================
+// ⚙️ CONFIGURATION INITIALE
+// ==========================================
+
+// Configuration de l'input année
 if (year) {
     year.setAttribute('min', '1895');
     year.setAttribute('max', currentYear.toString());
     year.setAttribute('type', 'number');
 }
 
-// Récupération des films
-const movies = await apiFetch('list_movies');
-
-// Remplir le select
-if (movieSelect && movies.length > 0) {
-    movies.forEach(movie => {
-        const option = new Option(movie.title, movie.id);
-        movieSelect.appendChild(option);
-    });
-}
-
-const filterMovies = async () => {
-    try {
-        const genre = document.getElementById('filterGenre').value;
-        const year = document.getElementById('filterYear').value;
-
-        // Mise à jour de l'état
-        state.filters.genre = genre;
-        state.filters.year = year;
-        state.currentPage = 1; // On revient à la page 1
-
-        // Appel API via ta fonction apiList
-        // Note: filters est passé en paramètre query
-        const results = await apiList('movies', {
-            genre: state.filters.genre,
-            year: state.filters.year
-        });
-
-        // Mise à jour de la liste locale utilisée pour le rendu
-        state.filteredMovies = results;
-
-        // Mise à jour du compteur visuel
-        document.getElementById('resultCount').textContent = results.length;
-
-        renderMovies(); // On relance le dessin du tableau
-    } catch (error) {
-        console.error("Erreur lors du filtrage :", error);
-    }
-};
-
-// Fonction pour remplir les menus déroulants à partir des données réelles
-const setupDynamicFilters = (movies) => {
-    const genreSelect = document.getElementById('filterGenre');
-    const yearSelect = document.getElementById('filterYear'); // Si tu veux un select pour l'année aussi
-
-    // On utilise Set pour n'avoir que des valeurs uniques
-    const genres = [...new Set(movies.map(m => m.genre))].sort();
-    const years = [...new Set(movies.map(m => m.release_year))].sort((a, b) => b - a);
-
-    // Remplir le select Genre
-    genreSelect.innerHTML = '<option value="">Tous les genres</option>';
-    genres.forEach(g => {
-        if (g) genreSelect.innerHTML += `<option value="${g}">${g}</option>`;
-    });
-
-    // Remplir le select Année (optionnel, ou garder un input number)
-    if (yearSelect) {
-        yearSelect.innerHTML = '<option value="">Toutes les années</option>';
-        years.forEach(y => {
-            yearSelect.innerHTML += `<option value="${y}">${y}</option>`;
-        });
-    }
-};
-
-
-
-// Au chargement initial de la page
-const init = async () => {
-    // 1. On récupère tout pour les filtres et l'affichage initial
-    const allMovies = await apiFetch('list_movies');
-
-    // 2. On initialise nos listes de travail
-    state.filteredMovies = allMovies;
-
-    // 3. On remplit les dropdowns (genre/année) dynamiquement
-    setupDynamicFilters(allMovies);
-
-    // 4. On dessine le tableau
-    renderMovies();
-
-    // 5. Compteur initial
-    document.getElementById('resultCount').textContent = allMovies.length;
-};
-init();
-// On récupère le bouton "Appliquer" que nous avons créé en Bootstrap
-// Bouton Appliquer
-document.getElementById('apply-filters').addEventListener('click', filterMovies);
-
-// Bouton Réinitialiser
-document.getElementById('resetFilters').addEventListener('click', () => {
-    document.getElementById('filterGenre').value = "";
-    document.getElementById('filterYear').value = "";
-    filterMovies(); // Relance la recherche à vide
-});
-
-// Facultatif : Filtrage automatique au changement
-document.getElementById('filterGenre').addEventListener('change', filterMovies);
-document.getElementById('filterYear').addEventListener('change', filterMovies);
-
-// Boutons de pagination
-const btnPrevMovie = document.getElementById('btnPrevMovie');
-const btnNextMovie = document.getElementById('btnNextMovie');
-const pageInfoMovie = document.getElementById('pageInfoMovie');
-
-// ✅ CRÉATION DU TABLEAU - Description tronquée, reste visible
+// ==========================================
+// 📊 CRÉATION DU TABLEAU
+// ==========================================
 const movieTable = document.createElement('table');
 movieTable.className = 'table table-bordered table-striped mt-4 table-hover';
 movieTable.innerHTML = `
     <thead class="table-dark">
         <tr>
-            <th class="text-center">ID</th>
-            <th>Titre</th>
+            <th class="text-center" style="width: 60px;">ID</th>
+            <th style="width: 200px;">Titre</th>
             <th>Description</th>
-            <th class="text-center">Durée (min)</th>
-            <th>Genre</th>
-            <th>Réalisateur</th>
-            <th class="text-center">Année</th>
-            <th class="text-center">Actions</th>
+            <th class="text-center" style="width: 100px;">Durée (min)</th>
+            <th style="width: 150px;">Genre</th>
+            <th style="width: 150px;">Réalisateur</th>
+            <th class="text-center" style="width: 80px;">Année</th>
+            <th class="text-center" style="width: 140px;">Actions</th>
         </tr>
     </thead>
     <tbody id="movieTableBody"></tbody>
@@ -155,12 +108,101 @@ if (listScreenings) {
 
 const movieTableBody = document.getElementById('movieTableBody');
 
-// ✅ FONCTION POUR CRÉER UNE LIGNE
+// ==========================================
+// 🔍 FONCTIONS DE FILTRAGE
+// ==========================================
+
+/**
+ * Filtre les films côté serveur via l'API
+ */
+const filterMovies = async () => {
+    try {
+        const genre = filterGenre?.value || '';
+        const year = filterYear?.value || '';
+        const search = searchInput?.value || '';
+
+        // Mise à jour de l'état
+        state.filters.genre = genre;
+        state.filters.year = year;
+        state.filters.search = search;
+        state.currentPage = 1;
+
+        // Construire les paramètres de filtrage
+        const filters = {};
+        if (genre) filters.genre = genre;
+        if (year) filters.year = year;
+        if (search) filters.search = search;
+
+        // Appel API avec filtres
+        const results = await apiList('movies', filters);
+
+        // Mise à jour de la liste filtrée
+        state.filteredMovies = results;
+
+        // Mise à jour du compteur
+        if (resultCount) {
+            resultCount.textContent = results.length;
+        }
+
+        // Réafficher avec les nouveaux résultats
+        renderMovies();
+
+        console.log('✅ Filtrage appliqué:', {
+            filters,
+            resultats: results.length
+        });
+    } catch (error) {
+        console.error("❌ Erreur lors du filtrage:", error);
+        alert('Erreur lors du filtrage des films');
+    }
+};
+
+/**
+ * Configure les menus déroulants de filtrage avec les données réelles
+ */
+const setupDynamicFilters = (moviesList) => {
+    if (!filterGenre || !filterYear) return;
+
+    // Extraire les valeurs uniques
+    const uniqueGenres = [...new Set(moviesList.map(m => m.genre))].filter(g => g).sort();
+    const uniqueYears = [...new Set(moviesList.map(m => m.release_year))].sort((a, b) => b - a);
+
+    // Remplir le select Genre
+    filterGenre.innerHTML = '<option value="">Tous les genres</option>';
+    uniqueGenres.forEach(g => {
+        const option = document.createElement('option');
+        option.value = g;
+        option.textContent = g;
+        filterGenre.appendChild(option);
+    });
+
+    // Remplir le select Année
+    filterYear.innerHTML = '<option value="">Toutes les années</option>';
+    uniqueYears.forEach(y => {
+        const option = document.createElement('option');
+        option.value = y;
+        option.textContent = y;
+        filterYear.appendChild(option);
+    });
+
+    console.log('✅ Filtres configurés:', {
+        genres: uniqueGenres.length,
+        années: uniqueYears.length
+    });
+};
+
+// ==========================================
+// 🎬 FONCTIONS D'AFFICHAGE
+// ==========================================
+
+/**
+ * Crée une ligne HTML pour un film
+ */
 const createMovieRow = (movie) => {
     const tr = document.createElement('tr');
     tr.dataset.id = movie.id;
 
-    // Tronquer UNIQUEMENT la description
+    // Tronquer la description pour l'affichage
     const shortDescription = truncateText(movie.description, 80);
     const fullDescription = (movie.description || '').replace(/"/g, '&quot;');
 
@@ -175,91 +217,108 @@ const createMovieRow = (movie) => {
         <td class="movie-director">${movie.director || 'N/A'}</td>
         <td class="text-center movie-year">${movie.release_year}</td>
         <td class="text-center actions">
-            <button class="btn btn-sm btn-danger delete-row-btn" data-id="${movie.id}" title="Supprimer">
-                <i class="bi bi-trash"></i>
+            <button class="btn btn-sm btn-info view-more-btn" data-id="${movie.id}" title="Voir plus">
+                <i class="bi bi-eye"></i>
             </button>
             <button class="btn btn-sm btn-warning edit-row-btn" data-id="${movie.id}" title="Modifier">
                 <i class="bi bi-pencil"></i>
             </button>
-            <button class="btn btn-sm btn-info view-more-btn" data-id="${movie.id}" title="Voir plus">
-                <i class="bi bi-eye"></i>
+            <button class="btn btn-sm btn-danger delete-row-btn" data-id="${movie.id}" title="Supprimer">
+                <i class="bi bi-trash"></i>
             </button>
         </td>
     `;
     return tr;
 };
 
-// Fonction pour afficher les films paginés
+/**
+ * Affiche les films paginés dans le tableau
+ */
 const renderMovies = () => {
     if (!movieTableBody) return;
 
     movieTableBody.innerHTML = '';
 
-    // On utilise la liste filtrée
-    const paginatedMovies = getPaginatedItems(state.filteredMovies, state.currentPage, state.itemsPerPage);
+    // Récupérer les films pour la page actuelle
+    const paginatedMovies = getPaginatedItems(
+        state.filteredMovies,
+        state.currentPage,
+        state.itemsPerPage
+    );
 
     if (paginatedMovies.length > 0) {
+        // Créer et ajouter les lignes
         paginatedMovies.forEach(movie => {
             movieTableBody.appendChild(createMovieRow(movie));
         });
     } else {
-        movieTableBody.innerHTML = '<tr><td colspan="8" class="text-center py-4 text-muted">Aucun film ne correspond à ces critères</td></tr>';
+        // Aucun résultat
+        movieTableBody.innerHTML = `
+            <tr>
+                <td colspan="8" class="text-center py-5 text-muted">
+                    <i class="bi bi-search fs-1 d-block mb-2"></i>
+                    <p class="mb-0">Aucun film ne correspond à ces critères</p>
+                </td>
+            </tr>
+        `;
     }
 
-    // Mise à jour de la pagination avec la longueur de la liste filtrée
-    updatePaginationUI(state.filteredMovies.length);
+    // Mettre à jour la pagination
+    updatePaginationUI();
 };
 
-// Fonction pour mettre à jour l'UI de pagination
+/**
+ * Met à jour l'interface de pagination
+ */
 const updatePaginationUI = () => {
+    // Texte d'information
     if (pageInfoMovie) {
-        pageInfoMovie.textContent = getPageInfo(state.currentPage, movies.length, state.itemsPerPage);
+        pageInfoMovie.textContent = getPageInfo(
+            state.currentPage,
+            state.filteredMovies.length,  // ✅ Utiliser filteredMovies
+            state.itemsPerPage
+        );
     }
 
-    if (isFirstPage(state.currentPage)) {
-        disableButton(btnPrevMovie);
-    } else {
-        enableButton(btnPrevMovie);
+    // Bouton Précédent
+    if (btnPrevMovie) {
+        if (isFirstPage(state.currentPage)) {
+            disableButton(btnPrevMovie);
+        } else {
+            enableButton(btnPrevMovie);
+        }
     }
 
-    if (isLastPage(state.currentPage, movies.length, state.itemsPerPage)) {
-        disableButton(btnNextMovie);
-    } else {
-        enableButton(btnNextMovie);
+    // Bouton Suivant
+    if (btnNextMovie) {
+        if (isLastPage(state.currentPage, state.filteredMovies.length, state.itemsPerPage)) {
+            //                            ✅ Utiliser filteredMovies
+            disableButton(btnNextMovie);
+        } else {
+            enableButton(btnNextMovie);
+        }
     }
 };
 
-// Gestionnaires des boutons de pagination
-if (btnPrevMovie) {
-    btnPrevMovie.addEventListener('click', () => {
-        if (state.currentPage > 1) {
-            state.currentPage--;
-            renderMovies();
-        }
-    });
-}
+// ==========================================
+// ✏️ FONCTIONS D'ÉDITION
+// ==========================================
 
-if (btnNextMovie) {
-    btnNextMovie.addEventListener('click', () => {
-        const totalPages = Math.ceil(movies.length / state.itemsPerPage);
-        if (state.currentPage < totalPages) {
-            state.currentPage++;
-            renderMovies();
-        }
-    });
-}
-
-
-
-
-// Fonction pour transformer une ligne en mode édition
+/**
+ * Active le mode édition sur une ligne
+ */
 const enableEditMode = (row) => {
     const movieId = row.dataset.id;
-    const movie = movies.find(m => m.id == movieId);
-    if (!movie) return;
+    const movie = state.filteredMovies.find(m => m.id == movieId);
+
+    if (!movie) {
+        console.error('❌ Film introuvable:', movieId);
+        return;
+    }
 
     row.classList.add('editing-mode');
 
+    // Transformer les cellules en inputs
     row.querySelector('.movie-title').innerHTML =
         `<input type="text" class="inline-input" list="listTitle" value="${movie.title}" data-field="title">`;
 
@@ -267,7 +326,7 @@ const enableEditMode = (row) => {
         `<textarea class="inline-textarea" data-field="description">${movie.description}</textarea>`;
 
     row.querySelector('.movie-duration').innerHTML =
-        `<input type="number" class="inline-input" value="${movie.duration}" data-field="duration" min="1" max="500">`;
+        `<input type="number" class="inline-input" value="${movie.duration}" data-field="duration" min="1" max="85740">`;
 
     row.querySelector('.movie-genre').innerHTML =
         `<input type="text" class="inline-input" list="genreList" value="${movie.genre}" data-field="genre">`;
@@ -278,6 +337,7 @@ const enableEditMode = (row) => {
     row.querySelector('.movie-year').innerHTML =
         `<input type="number" class="inline-input" min="1895" max="${currentYear}" value="${movie.release_year}" data-field="release_year">`;
 
+    // Remplacer les boutons d'action
     row.querySelector('.actions').innerHTML = `
         <button class="btn btn-sm btn-success save-row-btn" data-id="${movieId}" title="Sauvegarder">
             <i class="bi bi-check-lg"></i>
@@ -286,119 +346,193 @@ const enableEditMode = (row) => {
             <i class="bi bi-x-lg"></i>
         </button>
     `;
+
+    console.log('✏️ Mode édition activé pour:', movie.title);
 };
 
-// Fonction pour sauvegarder les modifications
+/**
+ * Sauvegarde les modifications d'un film
+ */
 const saveMovie = async (row) => {
     const movieId = row.dataset.id;
 
+    // Récupérer les valeurs des inputs
     const movieData = {
-        title: row.querySelector('[data-field="title"]').value,
-        description: row.querySelector('[data-field="description"]').value,
+        title: row.querySelector('[data-field="title"]').value.trim(),
+        description: row.querySelector('[data-field="description"]').value.trim(),
         duration: parseInt(row.querySelector('[data-field="duration"]').value, 10),
-        genre: row.querySelector('[data-field="genre"]').value,
-        director: row.querySelector('[data-field="director"]').value,
-        release_year: row.querySelector('[data-field="release_year"]').value
+        genre: row.querySelector('[data-field="genre"]').value.trim(),
+        director: row.querySelector('[data-field="director"]').value.trim(),
+        release_year: parseInt(row.querySelector('[data-field="release_year"]').value, 10)
     };
 
-    // Validation de la date
-    const releaseYear = parseInt(movieData.release_year, 10);
-
-    if (isNaN(releaseYear) || releaseYear < 1895 || releaseYear > currentYear) {
-        alert(`L'année doit être comprise entre 1895 et ${currentYear}.`);
-        return;
-    }
-
-    // Validation de la durée
-    if (isNaN(movieData.duration) || movieData.duration < 1 || movieData.duration > 85740) {
-        alert('La durée doit être entre 1 et 85740 minutes.');
-        return;
-    }
-
+    // Validations
     if (!movieData.title || !movieData.description) {
         alert('Le titre et la description sont obligatoires');
         return;
     }
 
+    if (isNaN(movieData.duration) || movieData.duration < 1 || movieData.duration > 857) {
+        alert('La durée doit être entre 1 et 857 minutes');
+        return;
+    }
+
+    if (isNaN(movieData.release_year) || movieData.release_year < 1895 || movieData.release_year > currentYear) {
+        alert(`L'année doit être entre 1895 et ${currentYear}`);
+        return;
+    }
+
     try {
+        // Appel API pour mise à jour
         const result = await apiPut('movie', movieId, movieData);
 
         if (result.success) {
-            alert('Film modifié avec succès ! 🎬');
 
+
+            // ✅ Mettre à jour la liste complète
             const movieIndex = movies.findIndex(m => m.id == movieId);
             if (movieIndex !== -1) {
-                movies[movieIndex] = { ...movies[movieIndex], ...movieData };
+                movies[movieIndex] = {
+                    ...movies[movieIndex],
+                    ...movieData,
+                    id: parseInt(movieId, 10)
+                };
             }
 
+            // ✅ Mettre à jour la liste filtrée
+            const filteredIndex = state.filteredMovies.findIndex(m => m.id == movieId);
+            if (filteredIndex !== -1) {
+                state.filteredMovies[filteredIndex] = {
+                    ...state.filteredMovies[filteredIndex],
+                    ...movieData,
+                    id: parseInt(movieId, 10)
+                };
+            }
+
+            // ✅ Mettre à jour le select
+            if (movieSelect) {
+                const option = movieSelect.querySelector(`option[value="${movieId}"]`);
+                if (option) {
+                    option.textContent = movieData.title;
+                }
+            }
+
+            // Réafficher
             renderMovies();
+
+            console.log('✅ Film mis à jour:', movieData.title);
         } else {
-            alert(`Erreur : ${result.error || 'Erreur inconnue'}`);
+            alert(`❌ Erreur : ${result.error || 'Erreur inconnue'}`);
         }
     } catch (error) {
-        alert(`Erreur : ${error.message}`);
+        console.error('❌ Erreur:', error);
+        alert(`❌ Erreur : ${error.message}`);
     }
 };
 
-// Fonction pour annuler l'édition
+/**
+ * Annule l'édition et restaure l'affichage normal
+ */
 const cancelEdit = () => {
     renderMovies();
+    console.log('🚫 Édition annulée');
 };
 
-// Fonction de suppression
-const executeDelete = async (type, id) => {
+// ==========================================
+// 🗑️ FONCTION DE SUPPRESSION
+// ==========================================
+
+/**
+ * Supprime un film
+ */
+const executeDelete = async (movieId) => {
     try {
-        const data = await apiDelete(type, id);
+        const result = await apiDelete('movie', movieId);
 
-        if (data.success) {
-            alert(`${type} supprimé !`);
+        if (result.success) {
 
-            const index = movies.findIndex(m => m.id == id);
+
+            // ✅ Supprimer de la liste complète
+            const index = movies.findIndex(m => m.id == movieId);
             if (index !== -1) {
                 movies.splice(index, 1);
             }
 
-            const option = movieSelect?.querySelector(`option[value="${id}"]`);
-            if (option) option.remove();
+            // ✅ Supprimer de la liste filtrée
+            const filteredIndex = state.filteredMovies.findIndex(m => m.id == movieId);
+            if (filteredIndex !== -1) {
+                state.filteredMovies.splice(filteredIndex, 1);
+            }
 
+            // ✅ Supprimer du select
+            if (movieSelect) {
+                const option = movieSelect.querySelector(`option[value="${movieId}"]`);
+                if (option) option.remove();
+            }
+
+            // ✅ Mettre à jour les compteurs
+            if (stockMovie) {
+                stockMovie.textContent = `Film${movies.length > 1 ? 's' : ''} en stock: ${movies.length} 🎬`;
+            }
+            if (resultCount) {
+                resultCount.textContent = state.filteredMovies.length;
+            }
+
+            // Réafficher
             renderMovies();
+
+            console.log('🗑️ Film supprimé, ID:', movieId);
         } else {
-            alert(data.error);
+            alert(`❌ Erreur : ${result.error || 'Erreur inconnue'}`);
         }
     } catch (error) {
-        alert(`Erreur : ${error.message}`);
+        console.error('❌ Erreur:', error);
+        alert(`❌ Erreur : ${error.message}`);
     }
 };
 
-// Fonction pour afficher la description complète dans une modal
+// ==========================================
+// 👁️ MODAL "VOIR PLUS"
+// ==========================================
+
+/**
+ * Affiche la description complète dans une modal
+ */
 const showFullDescription = (movieId) => {
     const movie = movies.find(m => m.id == movieId);
-    if (!movie) return;
+
+    if (!movie) {
+        alert('Film introuvable');
+        return;
+    }
 
     const modal = document.createElement('div');
+    modal.className = 'movie-modal-overlay';
     modal.style.cssText = `
         position: fixed;
         top: 0;
         left: 0;
         width: 100%;
         height: 100%;
-        background: rgba(0,0,0,0.7);
+        background: rgba(0, 0, 0, 0.7);
         display: flex;
         justify-content: center;
         align-items: center;
         z-index: 9999;
+        animation: fadeIn 0.3s ease;
     `;
 
     modal.innerHTML = `
         <div style="
             background: white;
             padding: 30px;
-            border-radius: 10px;
+            border-radius: 15px;
             max-width: 700px;
-            max-height: 80vh;
+            max-height: 85vh;
             overflow-y: auto;
             position: relative;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+            animation: slideUp 0.3s ease;
         ">
             <button id="closeModal" style="
                 position: absolute;
@@ -408,43 +542,104 @@ const showFullDescription = (movieId) => {
                 background: #dc3545;
                 color: white;
                 border-radius: 50%;
-                width: 35px;
-                height: 35px;
+                width: 40px;
+                height: 40px;
                 cursor: pointer;
-                font-size: 20px;
+                font-size: 24px;
                 font-weight: bold;
                 line-height: 1;
-            ">×</button>
+                transition: all 0.2s;
+            " onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'">
+                ×
+            </button>
             
-            <h3 style="margin-top: 0; color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 10px;">
-                ${movie.title}
+            <h3 style="
+                margin-top: 0;
+                color: #2c3e50;
+                border-bottom: 3px solid #3498db;
+                padding-bottom: 15px;
+                font-size: 1.8rem;
+            ">
+                🎬 ${movie.title}
             </h3>
             
-            <div style="margin: 20px 0;">
-                <h5 style="color: #555; margin-bottom: 10px;">Description :</h5>
-                <p style="color: #666; line-height: 1.6; text-align: center; white-space: pre-wrap;">
+            <div style="margin: 25px 0;">
+                <h5 style="
+                    color: #555;
+                    margin-bottom: 12px;
+                    font-weight: 600;
+                ">📝 Description :</h5>
+                <p style="
+                    color: #666;
+                    line-height: 1.8;
+                    white-space: pre-wrap;
+                    text-align: justify;
+                    padding: 15px;
+                    background: #f8f9fa;
+                    border-radius: 8px;
+                    border-left: 4px solid #3498db;
+                ">
                     ${movie.description}
                 </p>
             </div>
             
-            <hr style="margin: 20px 0; border: none; border-top: 1px solid #ddd;">
+            <hr style="margin: 25px 0; border: none; border-top: 2px solid #e0e0e0;">
             
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; font-size: 14px;">
-                <div style="background: #f8f9fa; padding: 10px; border-radius: 5px;">
-                    <strong style="color: #2c3e50;">📽️ Durée :</strong> 
-                    <span style="color: #555;">${movie.duration} minutes</span>
+            <div style="
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 15px;
+            ">
+                <div style="
+                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                    color: white;
+                    padding: 15px;
+                    border-radius: 10px;
+                    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+                ">
+                    <div style="font-size: 0.85rem; opacity: 0.9;">⏱️ Durée</div>
+                    <div style="font-size: 1.5rem; font-weight: bold; margin-top: 5px;">
+                        ${movie.duration} min
+                    </div>
                 </div>
-                <div style="background: #f8f9fa; padding: 10px; border-radius: 5px;">
-                    <strong style="color: #2c3e50;">🎭 Genre :</strong> 
-                    <span style="color: #555;">${movie.genre}</span>
+                
+                <div style="
+                    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+                    color: white;
+                    padding: 15px;
+                    border-radius: 10px;
+                    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+                ">
+                    <div style="font-size: 0.85rem; opacity: 0.9;">🎭 Genre</div>
+                    <div style="font-size: 1.5rem; font-weight: bold; margin-top: 5px;">
+                        ${movie.genre}
+                    </div>
                 </div>
-                <div style="background: #f8f9fa; padding: 10px; border-radius: 5px;">
-                    <strong style="color: #2c3e50;">🎬 Réalisateur :</strong> 
-                    <span style="color: #555;">${movie.director || 'N/A'}</span>
+                
+                <div style="
+                    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+                    color: white;
+                    padding: 15px;
+                    border-radius: 10px;
+                    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+                ">
+                    <div style="font-size: 0.85rem; opacity: 0.9;">🎬 Réalisateur</div>
+                    <div style="font-size: 1.2rem; font-weight: bold; margin-top: 5px;">
+                        ${movie.director || 'N/A'}
+                    </div>
                 </div>
-                <div style="background: #f8f9fa; padding: 10px; border-radius: 5px;">
-                    <strong style="color: #2c3e50;">📅 Année :</strong> 
-                    <span style="color: #555;">${movie.release_year}</span>
+                
+                <div style="
+                    background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+                    color: white;
+                    padding: 15px;
+                    border-radius: 10px;
+                    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+                ">
+                    <div style="font-size: 0.85rem; opacity: 0.9;">📅 Année</div>
+                    <div style="font-size: 1.5rem; font-weight: bold; margin-top: 5px;">
+                        ${movie.release_year}
+                    </div>
                 </div>
             </div>
         </div>
@@ -452,56 +647,149 @@ const showFullDescription = (movieId) => {
 
     document.body.appendChild(modal);
 
+    // Fermeture de la modal
     modal.addEventListener('click', (e) => {
         if (e.target === modal || e.target.id === 'closeModal') {
-            document.body.removeChild(modal);
+            modal.style.animation = 'fadeOut 0.3s ease';
+            setTimeout(() => {
+                document.body.removeChild(modal);
+            }, 300);
         }
     });
+
+    console.log('👁️ Modal ouverte pour:', movie.title);
 };
 
-// Gestionnaire d'événements PRINCIPAL
+// ==========================================
+// 🎯 GESTIONNAIRE D'ÉVÉNEMENTS PRINCIPAL
+// ==========================================
+
 if (movieTableBody) {
     movieTableBody.addEventListener('click', async (e) => {
         const row = e.target.closest('tr');
         if (!row) return;
 
-        if (e.target.closest('.delete-row-btn')) {
-            const movieId = e.target.closest('.delete-row-btn').dataset.id;
-            if (confirm("Supprimer ce film ?")) {
-                await executeDelete('movie', movieId, row);
-            }
+        // Bouton Voir plus
+        if (e.target.closest('.view-more-btn')) {
+            const movieId = parseInt(e.target.closest('.view-more-btn').dataset.id, 10);
+            showFullDescription(movieId);
             return;
         }
 
+        // Bouton Modifier
         if (e.target.closest('.edit-row-btn')) {
             enableEditMode(row);
             return;
         }
 
+        // Bouton Sauvegarder
         if (e.target.closest('.save-row-btn')) {
             await saveMovie(row);
             return;
         }
 
+        // Bouton Annuler
         if (e.target.closest('.cancel-edit-btn')) {
-            cancelEdit(row);
+            cancelEdit();
             return;
         }
 
-        if (e.target.closest('.view-more-btn')) {
-            const movieId = e.target.closest('.view-more-btn').dataset.id;
-            showFullDescription(movieId);
+        // Bouton Supprimer
+        if (e.target.closest('.delete-row-btn')) {
+            const movieId = parseInt(e.target.closest('.delete-row-btn').dataset.id, 10);
+            const movie = movies.find(m => m.id === movieId);
+
+            if (movie && confirm(`Supprimer le film "${movie.title}" ?\n\nCette action est irréversible.`)) {
+                await executeDelete(movieId);
+            }
             return;
         }
     });
 }
 
-// Fonction d'auto-complétion
-const autoFillForm = (selectedTitle) => {
-    let movie = moviesDatabase.find(m => m.title.toLowerCase() === selectedTitle.toLowerCase());
+// ==========================================
+// 📄 PAGINATION - ÉVÉNEMENTS
+// ==========================================
 
+if (btnPrevMovie) {
+    btnPrevMovie.addEventListener('click', () => {
+        if (state.currentPage > 1) {
+            state.currentPage--;
+            renderMovies();
+            console.log('⬅️ Page précédente:', state.currentPage);
+        }
+    });
+}
+
+if (btnNextMovie) {
+    btnNextMovie.addEventListener('click', () => {
+        const totalPages = Math.ceil(state.filteredMovies.length / state.itemsPerPage);
+        //                           ✅ Correction : utiliser filteredMovies
+
+        if (state.currentPage < totalPages) {
+            state.currentPage++;
+            renderMovies();
+            console.log('➡️ Page suivante:', state.currentPage);
+        }
+    });
+}
+
+// ==========================================
+// 🔍 FILTRES - ÉVÉNEMENTS
+// ==========================================
+
+// Bouton Appliquer les filtres
+if (applyFiltersBtn) {
+    applyFiltersBtn.addEventListener('click', filterMovies);
+}
+
+// Bouton Réinitialiser
+if (resetButton) {
+    resetButton.addEventListener('click', () => {
+        if (filterGenre) filterGenre.value = "";
+        if (filterYear) filterYear.value = "";
+        if (searchInput) searchInput.value = "";
+        filterMovies();
+        console.log('🔄 Filtres réinitialisés');
+    });
+}
+
+// Changements automatiques
+if (filterGenre) {
+    filterGenre.addEventListener('change', filterMovies);
+}
+
+if (filterYear) {
+    filterYear.addEventListener('change', filterMovies);
+}
+
+// Recherche avec debounce
+if (searchInput) {
+    let searchTimeout;
+    searchInput.addEventListener('input', () => {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(filterMovies, 300);
+    });
+}
+
+// ==========================================
+// 📝 AUTO-COMPLÉTION DU FORMULAIRE
+// ==========================================
+
+/**
+ * Remplit automatiquement le formulaire si le film existe dans la base de données
+ */
+const autoFillForm = (selectedTitle) => {
+    // Chercher d'abord dans la base locale
+    let movie = moviesDatabase?.find(m =>
+        m.title.toLowerCase() === selectedTitle.toLowerCase()
+    );
+
+    // Sinon chercher dans les films chargés
     if (!movie) {
-        movie = movies.find(m => m.title.toLowerCase() === selectedTitle.toLowerCase());
+        movie = movies.find(m =>
+            m.title.toLowerCase() === selectedTitle.toLowerCase()
+        );
     }
 
     if (movie) {
@@ -517,77 +805,110 @@ const autoFillForm = (selectedTitle) => {
         if (directorField) directorField.value = movie.director || '';
         if (releaseYearField) releaseYearField.value = movie.release_year || '';
 
-        console.log('✅ Formulaire auto-rempli avec:', movie.title);
+        console.log('✅ Formulaire auto-rempli:', movie.title);
     }
 };
 
-const titleInput = document.getElementById('movieTitle');
+// Event listeners pour l'auto-complétion
 if (titleInput) {
     titleInput.addEventListener('input', (e) => {
-        const selectedTitle = e.target.value;
-        if (selectedTitle.trim()) {
+        const selectedTitle = e.target.value.trim();
+        if (selectedTitle) {
             autoFillForm(selectedTitle);
         }
     });
 
     titleInput.addEventListener('blur', (e) => {
-        const selectedTitle = e.target.value;
-        if (selectedTitle.trim()) {
+        const selectedTitle = e.target.value.trim();
+        if (selectedTitle) {
             autoFillForm(selectedTitle);
         }
     });
 }
 
-// Formulaire d'ajout
+// ==========================================
+// ➕ FORMULAIRE D'AJOUT
+// ==========================================
+
 if (formMovie) {
     formMovie.addEventListener('submit', async (e) => {
         e.preventDefault();
 
-        const titleValue = document.getElementById('movieTitle').value;
-        const descriptionValue = document.getElementById('movieSummary').value;
-        const durationValue = document.getElementById('movieDuration').value;
-        const genreValue = document.getElementById('movieGenre').value;
-        const directorValue = document.getElementById('movieDirector').value;
-        const releaseYearValue = document.getElementById('movieReleaseYear').value;
-
-        const releaseYear = parseInt(releaseYearValue, 10);
-
-        if (isNaN(releaseYear) || releaseYear < 1895 || releaseYear > currentYear) {
-            alert(`L'année doit être comprise entre 1895 et ${currentYear}.`);
-            return;
-        }
-
-        const duration = parseInt(durationValue, 10);
-        if (isNaN(duration) || duration < 1 || duration > 85740) {
-            alert('La durée doit être entre 1 et 85740 minutes.');
-            return;
-        }
-
+        // Récupérer les valeurs
         const movieData = {
-            title: titleValue,
-            description: descriptionValue,
-            duration: duration,
-            genre: genreValue,
-            director: directorValue,
-            release_year: releaseYear
+            title: document.getElementById('movieTitle')?.value.trim() || '',
+            description: document.getElementById('movieSummary')?.value.trim() || '',
+            duration: parseInt(document.getElementById('movieDuration')?.value, 10) || 0,
+            genre: document.getElementById('movieGenre')?.value.trim() || '',
+            director: document.getElementById('movieDirector')?.value.trim() || '',
+            release_year: parseInt(document.getElementById('movieReleaseYear')?.value, 10) || 0
         };
 
+        // Validations
+        if (!movieData.title || !movieData.description) {
+            alert('❌ Le titre et la description sont obligatoires');
+            return;
+        }
+
+        if (isNaN(movieData.duration) || movieData.duration < 1 || movieData.duration > 857) {
+            alert('❌ La durée doit être entre 1 et 857 minutes');
+            return;
+        }
+
+        if (isNaN(movieData.release_year) || movieData.release_year < 1895 || movieData.release_year > currentYear) {
+            alert(`❌ L'année doit être entre 1895 et ${currentYear}`);
+            return;
+        }
+
         try {
+            // Appel API
             const result = await apiPost('add_movie', movieData);
 
             if (result.success) {
-                alert('Film ajouté avec succès 🎬');
-                location.reload();
+
+
+                // ✅ Créer l'objet film avec l'ID retourné
+                const newMovie = {
+                    id: result.id || (Math.max(...movies.map(m => m.id), 0) + 1),
+                    ...movieData
+                };
+
+                // ✅ Ajouter à la liste complète
+                movies.push(newMovie);
+
+                // ✅ Ajouter au select
+                if (movieSelect) {
+                    const option = new Option(newMovie.title, newMovie.id);
+                    movieSelect.appendChild(option);
+                }
+
+                // ✅ Réappliquer les filtres (pour mettre à jour l'affichage)
+                await filterMovies();
+
+                // ✅ Réinitialiser le formulaire
+                formMovie.reset();
+
+                // ✅ Mettre à jour le compteur global
+                if (stockMovie) {
+                    stockMovie.textContent = `Film${movies.length > 1 ? 's' : ''} en stock: ${movies.length} 🎬`;
+                }
+
+                console.log('✅ Film ajouté:', newMovie.title);
             } else {
-                alert(`Erreur : ${result.error || 'Erreur inconnue'}`);
+                alert(`❌ Erreur : ${result.error || 'Erreur inconnue'}`);
             }
         } catch (error) {
-            alert(`Erreur : ${error.message}`);
+            console.error('❌ Erreur:', error);
+            alert(`❌ Erreur : ${error.message}`);
         }
     });
 }
 
-// Remplissage de la datalist des genres
+// ==========================================
+// 📋 REMPLISSAGE DES DATALISTS
+// ==========================================
+
+// Datalist des genres
 const genreDatalist = document.getElementById('genreList');
 if (genreDatalist && genres) {
     genres.forEach(genreName => {
@@ -595,9 +916,10 @@ if (genreDatalist && genres) {
         option.value = genreName;
         genreDatalist.appendChild(option);
     });
+    console.log('✅ Datalist genres remplie:', genres.length);
 }
 
-// Remplissage de la datalist des titres
+// Datalist des titres
 const titleDataList = document.getElementById('listTitle');
 if (titleDataList && moviesDatabase) {
     moviesDatabase.forEach(movie => {
@@ -605,17 +927,133 @@ if (titleDataList && moviesDatabase) {
         option.value = movie.title;
         titleDataList.appendChild(option);
     });
+    console.log('✅ Datalist titres remplie:', moviesDatabase.length);
 }
 
-// Afficher le compteur
-if (stockMovie) {
-    stockMovie.textContent = `Film${movies.length > 1 ? 's' : ''} en stock: ${movies.length} 🎬`;
-}
+// ==========================================
+// 🚀 REMPLIR LE SELECT
+// ==========================================
 
-// Affichage initial
-renderMovies();
+/**
+ * Remplit le select avec la liste des films
+ */
+const fillMovieSelect = (moviesList) => {
+    if (movieSelect && moviesList.length > 0) {
+        // Vider le select
+        movieSelect.innerHTML = '<option value="">-- Sélectionner un film --</option>';
 
-console.log('✅ movie.js chargé', {
-    moviesAPI: movies.length,
-    moviesDatabase: moviesDatabase.length
-});
+        // Ajouter les options
+        moviesList.forEach(movie => {
+            const option = new Option(movie.title, movie.id);
+            movieSelect.appendChild(option);
+        });
+
+        console.log('✅ Select rempli:', moviesList.length, 'films');
+    }
+};
+
+// ==========================================
+// 🎬 INITIALISATION
+// ==========================================
+
+/**
+ * Initialise l'application
+ */
+const init = async () => {
+    try {
+        console.log('🎬 Initialisation de movie.js...');
+
+        // ✅ Charger les films (UNE SEULE FOIS)
+        movies = await apiFetch('list_movies');
+        state.filteredMovies = movies;
+
+        console.log('✅ Films chargés:', movies.length);
+
+        // Configurer les filtres dynamiques
+        setupDynamicFilters(movies);
+
+        // Remplir le select
+        fillMovieSelect(movies);
+
+        // Afficher les films
+        renderMovies();
+
+        // Mettre à jour les compteurs
+        if (stockMovie) {
+            stockMovie.textContent = `Film${movies.length > 1 ? 's' : ''} en stock: ${movies.length} 🎬`;
+        }
+
+        if (resultCount) {
+            resultCount.textContent = movies.length;
+        }
+
+        console.log('✅ movie.js initialisé avec succès!', {
+            filmsAPI: movies.length,
+            filmsDatabase: moviesDatabase?.length || 0,
+            genres: genres?.length || 0
+        });
+    } catch (error) {
+        console.error('❌ Erreur lors de l\'initialisation:', error);
+        alert('❌ Erreur lors du chargement des films. Veuillez recharger la page.');
+    }
+};
+
+// ==========================================
+// ▶️ DÉMARRER L'APPLICATION
+// ==========================================
+init();
+
+// ==========================================
+// 🎨 STYLES CSS POUR LES ANIMATIONS
+// ==========================================
+const style = document.createElement('style');
+style.textContent = `
+    @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+    
+    @keyframes fadeOut {
+        from { opacity: 1; }
+        to { opacity: 0; }
+    }
+    
+    @keyframes slideUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    .editing-mode {
+        background-color: #fff3cd !important;
+    }
+    
+    .inline-input {
+        width: 100%;
+        padding: 5px;
+        border: 1px solid #ced4da;
+        border-radius: 4px;
+    }
+    
+    .inline-textarea {
+        width: 100%;
+        min-height: 60px;
+        padding: 5px;
+        border: 1px solid #ced4da;
+        border-radius: 4px;
+        resize: vertical;
+    }
+    
+    .inline-input:focus,
+    .inline-textarea:focus {
+        outline: none;
+        border-color: #80bdff;
+        box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+    }
+`;
+document.head.appendChild(style);

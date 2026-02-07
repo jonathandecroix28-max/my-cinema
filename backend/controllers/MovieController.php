@@ -113,10 +113,10 @@ class MovieController
             return;
         }
 
-        if ($duration < 1 || $duration > 500) {
+        if ($duration < 1 || $duration > 85740) {
             echo json_encode([
                 "success" => false,
-                "error" => "La durée doit être entre 1 et 500 minutes (reçu : {$duration})"
+                "error" => "La durée doit être entre 1 et 85740 minutes (reçu : {$duration})"
             ]);
             return;
         }
@@ -231,10 +231,10 @@ class MovieController
             return;
         }
 
-        if ($duration < 1 || $duration > 500) {
+        if ($duration < 1 || $duration > 85740) {
             echo json_encode([
                 "success" => false,
-                "error" => "La durée doit être entre 1 et 500 minutes"
+                "error" => "La durée doit être entre 1 et 85740 minutes"
             ]);
             return;
         }

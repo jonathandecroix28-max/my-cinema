@@ -37,51 +37,41 @@ class ScreeningRepository
      */
     public function checkConflicts($movie_id, $room_id, $start_time, $excludeScreeningId = null)
     {
-        // 1. Récupérer la durée du film à programmer
         $stmtMovie = $this->pdo->prepare("SELECT duration FROM movies WHERE id = :id");
         $stmtMovie->execute([':id' => $movie_id]);
         $newMovie = $stmtMovie->fetch(PDO::FETCH_ASSOC);
 
-        if (!$newMovie) {
-            return false; // Film inexistant, pas de conflit possible
-        }
+        if (!$newMovie)
+            return false;
 
-        $newDuration = (int) $newMovie['duration'] + 15; // Durée du film + 15 min de battement
+        $newDuration = $newMovie['duration'] + 15;
 
-        // 2. Construire la requête SQL pour détecter les chevauchements
         $sql = "
-            SELECT s.id 
-            FROM screenings s
-            JOIN movies m ON s.movie_id = m.id
-            WHERE s.room_id = :room_id 
-            AND :new_start_1 < DATE_ADD(s.start_time, INTERVAL (m.duration + 15) MINUTE)
-            AND DATE_ADD(:new_start_2, INTERVAL :new_duration MINUTE) > s.start_time
-        ";
+        SELECT screenings.* FROM screenings 
+        JOIN movies ON screenings.movie_id = movies.id
+        WHERE screenings.room_id = :room_id 
+        AND :new_start < DATE_ADD(screenings.start_time, INTERVAL (movies.duration + 15) MINUTE)
+        AND DATE_ADD(:new_start, INTERVAL :new_duration MINUTE) > screenings.start_time
+    ";
 
-        // ✅ Si on est en mode update, exclure la séance en cours de modification
+        // ✅ Exclure la séance en cours de modification
         if ($excludeScreeningId !== null) {
-            $sql .= " AND s.id != :exclude_id";
+            $sql .= " AND screenings.id != :exclude_id";
         }
 
-        // 3. Exécuter la requête avec les paramètres appropriés
         $stmt = $this->pdo->prepare($sql);
-
         $params = [
             ':room_id' => $room_id,
-            ':new_start_1' => $start_time,
-            ':new_start_2' => $start_time,
+            ':new_start' => $start_time,
             ':new_duration' => $newDuration
         ];
 
-        // ✅ Ajouter le paramètre d'exclusion si nécessaire
         if ($excludeScreeningId !== null) {
             $params[':exclude_id'] = $excludeScreeningId;
         }
 
         $stmt->execute($params);
-
-        // 4. Retourner true si un conflit est trouvé, false sinon
-        return $stmt->fetch() ? true : false;
+        return $stmt->fetch(PDO::FETCH_ASSOC) ? true : false;
     }
 
     /**

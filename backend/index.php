@@ -1,9 +1,15 @@
 <?php
 
 // ✅ Désactiver l'affichage des erreurs en production
-ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
+ini_set('display_errors', 0);
+ini_set('display_startup_errors', 0);
 error_reporting(E_ALL);
+
+// Activer uniquement en développement
+if (getenv('APP_ENV') === 'development') {
+    ini_set('display_errors', 1);
+    ini_set('display_startup_errors', 1);
+}
 ini_set('error_log', __DIR__ . '/logs/php_errors.log');
 
 session_start();

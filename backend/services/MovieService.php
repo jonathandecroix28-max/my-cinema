@@ -50,10 +50,10 @@ class MovieService
         }
 
         // ✅ Validation de la durée
-        if ($duration < 1 || $duration > 500) {
+        if ($duration < 1 || $duration > 85740) {
             return [
                 "success" => false,
-                "error" => "La durée doit être entre 1 et 500 minutes"
+                "error" => "La durée doit être entre 1 et 85740 minutes"
             ];
         }
 
@@ -129,10 +129,10 @@ class MovieService
         }
 
         // ✅ Validation de la durée
-        if ($duration < 1 || $duration > 500) {
+        if ($duration < 1 || $duration > 85740) {
             return [
                 "success" => false,
-                "error" => "La durée doit être entre 1 et 500 minutes"
+                "error" => "La durée doit être entre 1 et 85740 minutes"
             ];
         }
 

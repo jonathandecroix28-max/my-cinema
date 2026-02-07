@@ -17,33 +17,26 @@ class ScreeningController
     {
         $data = json_decode(file_get_contents('php://input'), true);
 
-        // ✅ Vérification des données
         if (!isset($data['movie_id'], $data['room_id'], $data['start_time'])) {
             echo json_encode(["success" => false, "error" => "Données manquantes"]);
             return;
         }
 
-        // ✅ CORRECTION 2 : Vérifier la date AVANT d'appeler le service
+        // ✅ Validation AVANT appel au service
         try {
             $inputDate = new DateTime($data['start_time']);
             $now = new DateTime();
 
             if ($inputDate < $now) {
-                echo json_encode([
-                    "success" => false,
-                    "error" => "Impossible de programmer une séance dans le passé !"
-                ]);
-                return; // ✅ RETURN au lieu de EXIT
+                echo json_encode(["success" => false, "error" => "Impossible de programmer une séance dans le passé !"]);
+                return;  // ✅ RETURN au lieu de EXIT
             }
         } catch (Exception $e) {
-            echo json_encode([
-                "success" => false,
-                "error" => "Format de date invalide"
-            ]);
+            echo json_encode(["success" => false, "error" => "Format de date invalide"]);
             return;
         }
 
-        // ✅ Appel du service APRÈS validation
+        // ✅ Appel au service APRÈS validation
         $result = $this->service->addScreening(
             $data['movie_id'],
             $data['room_id'],

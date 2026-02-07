@@ -47,22 +47,26 @@ export const apiPost = async (action, data) => {
 
 // 4. Fonction de suppression générique
 export const apiDelete = async (type, id) => {
-    return await apiFetch(`delete_${type}&id=${id}`, {
-        method: 'DELETE'
+    return await apiFetch(`delete_${type}`, {
+        method: 'DELETE',
+        query: { id }  // ✅ Séparé proprement
     });
 };
+
 export const apiPut = async (type, id, data) => {
-    return await apiFetch(`update_${type}&id=${id}`, {
+    const url = `${API_BASE_URL}?action=update_${type}&id=${id}`;
+    const response = await fetch(url, {
         method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data)
     });
-}
+    return response.json();
+};
 
 export const apiGet = async (type, id) => {
-    return await apiFetch(`get_${type}&id=${id}`, { id });
+    return await apiFetch(`get_${type}`, {
+        query: { id }  // ✅ Correction du doublon
+    });
 };
 
 export const apiList = async (type, filters = {}) => {
