@@ -100,6 +100,9 @@ class RoomService
     /**
      * Mettre à jour une salle existante
      */
+    /**
+     * Mettre à jour une salle existante
+     */
     public function updateRoom($id, $name, $capacity, $type, $active)
     {
         // ✅ Vérifier que la salle existe
@@ -108,6 +111,21 @@ class RoomService
                 "success" => false,
                 "error" => "La salle n'existe pas"
             ];
+        }
+
+        // ✅ NOUVELLE VÉRIFICATION : Si désactivation, vérifier les séances futures
+        $currentRoom = $this->roomRepo->findById($id);
+        if ($currentRoom['active'] == 1 && $active == 0) {
+            // On essaie de désactiver une salle active
+            $screeningRepo = new ScreeningRepository();
+            $futureCount = $screeningRepo->countFutureScreenings($id);
+
+            if ($futureCount > 0) {
+                return [
+                    "success" => false,
+                    "error" => "Impossible de désactiver cette salle : elle a {$futureCount} séance(s) future(s). Veuillez d'abord annuler ou déplacer ces séances."
+                ];
+            }
         }
 
         // ✅ Vérifier si le nom existe déjà (en excluant cette salle)
@@ -158,7 +176,7 @@ class RoomService
     }
 
     /**
-     * Supprimer une salle
+     * Supprimer une salle (SOFT DELETE)
      */
     public function deleteRoom($id)
     {
@@ -170,8 +188,19 @@ class RoomService
             ];
         }
 
+        // ✅ NOUVELLE VÉRIFICATION : Vérifier les séances futures
+        $screeningRepo = new ScreeningRepository();
+        $futureCount = $screeningRepo->countFutureScreenings($id);
+
+        if ($futureCount > 0) {
+            return [
+                "success" => false,
+                "error" => "Impossible de supprimer cette salle : elle a {$futureCount} séance(s) future(s). Veuillez d'abord annuler ou déplacer ces séances."
+            ];
+        }
+
         try {
-            $this->roomRepo->delete($id);
+            $this->roomRepo->softDelete($id);  // ✅ Soft delete
             return [
                 "success" => true,
                 "message" => "Salle supprimée avec succès !"
@@ -182,5 +211,106 @@ class RoomService
                 "error" => "Erreur lors de la suppression : " . $e->getMessage()
             ];
         }
+    }
+
+    // ========================================
+    // ✅ NOUVELLES MÉTHODES POUR SOFT DELETE
+    // ========================================
+
+    /**
+     * ✅ NOUVEAU : Récupérer les salles supprimées
+     */
+    public function getDeletedRooms()
+    {
+        return $this->roomRepo->getDeleted();
+    }
+
+    /**
+     * ✅ NOUVEAU : Restaurer une salle supprimée
+     */
+    public function restoreRoom($id)
+    {
+        // ✅ Vérifier que la salle existe (incluant les supprimées)
+        $room = $this->roomRepo->findByIdWithDeleted($id, true);
+
+        if (!$room) {
+            return [
+                "success" => false,
+                "error" => "La salle n'existe pas"
+            ];
+        }
+
+        // ✅ Vérifier que la salle est bien supprimée
+        if ($room['deleted_at'] === null) {
+            return [
+                "success" => false,
+                "error" => "La salle n'est pas supprimée"
+            ];
+        }
+
+        try {
+            $this->roomRepo->restore($id);
+            return [
+                "success" => true,
+                "message" => "Salle restaurée avec succès !"
+            ];
+        } catch (Exception $e) {
+            return [
+                "success" => false,
+                "error" => "Erreur lors de la restauration : " . $e->getMessage()
+            ];
+        }
+    }
+
+    /**
+     * ✅ NOUVEAU : Supprimer définitivement une salle (hard delete)
+     */
+    public function permanentlyDeleteRoom($id)
+    {
+        // ✅ Vérifier que la salle existe
+        $room = $this->roomRepo->findByIdWithDeleted($id, true);
+
+        if (!$room) {
+            return [
+                "success" => false,
+                "error" => "La salle n'existe pas"
+            ];
+        }
+
+        // ✅ Vérifier que la salle est déjà soft-deleted
+        if ($room['deleted_at'] === null) {
+            return [
+                "success" => false,
+                "error" => "La salle doit d'abord être supprimée (soft delete) avant d'être supprimée définitivement"
+            ];
+        }
+
+        try {
+            $this->roomRepo->hardDelete($id);
+            return [
+                "success" => true,
+                "message" => "Salle supprimée définitivement !"
+            ];
+        } catch (Exception $e) {
+            return [
+                "success" => false,
+                "error" => "Erreur lors de la suppression définitive : " . $e->getMessage()
+            ];
+        }
+    }
+
+    /**
+     * ✅ NOUVEAU : Vérifier si une salle a des séances futures
+     */
+    public function checkRoomScreenings($id)
+    {
+        $screeningRepo = new ScreeningRepository();
+        $count = $screeningRepo->countFutureScreenings($id);
+
+        return [
+            "success" => true,
+            "has_future_screenings" => $count > 0,
+            "count" => $count
+        ];
     }
 }

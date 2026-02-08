@@ -1,10 +1,10 @@
-// ==========================================
-// MOVIE.JS - VERSION CORRIGÉE ET OPTIMISÉE
-// ==========================================
 
-// ==========================================
-// 📦 IMPORTS
-// ==========================================
+// MOVIE.JS - VERSION CORRIGÉE ET OPTIMISÉE
+
+
+
+// IMPORTS
+
 import {
     apiFetch,
     truncateText,
@@ -28,9 +28,9 @@ import {
 
 import { moviesDatabase, genres } from './movie-data.js';
 
-// ==========================================
-// 🌐 VARIABLES GLOBALES
-// ==========================================
+
+// VARIABLES GLOBALES
+
 const { movieSelect, formMovie, listScreenings, stockMovie } = els;
 
 // Liste complète des films (source de vérité)
@@ -48,9 +48,9 @@ let state = {
     filteredMovies: []  // Films après application des filtres
 };
 
-// ==========================================
-// 🎯 ÉLÉMENTS DOM
-// ==========================================
+
+// ÉLÉMENTS DOM
+
 const currentYear = new Date().getFullYear();
 
 // Champs du formulaire
@@ -62,7 +62,7 @@ const searchInput = document.getElementById('searchMovie');
 const filterGenre = document.getElementById('filterGenre');
 const filterYear = document.getElementById('filterYear');
 const resetButton = document.getElementById('resetFilters');
-const applyFiltersBtn = document.getElementById('apply-filters');
+
 const resultCount = document.getElementById('resultCount');
 
 // Pagination
@@ -70,9 +70,9 @@ const btnPrevMovie = document.getElementById('btnPrevMovie');
 const btnNextMovie = document.getElementById('btnNextMovie');
 const pageInfoMovie = document.getElementById('pageInfoMovie');
 
-// ==========================================
-// ⚙️ CONFIGURATION INITIALE
-// ==========================================
+
+// CONFIGURATION INITIALE
+
 
 // Configuration de l'input année
 if (year) {
@@ -81,22 +81,22 @@ if (year) {
     year.setAttribute('type', 'number');
 }
 
-// ==========================================
-// 📊 CRÉATION DU TABLEAU
-// ==========================================
+
+// CRÉATION DU TABLEAU
+
 const movieTable = document.createElement('table');
 movieTable.className = 'table table-bordered table-striped mt-4 table-hover';
 movieTable.innerHTML = `
     <thead class="table-dark">
         <tr>
-            <th class="text-center" style="width: 60px;">ID</th>
-            <th style="width: 200px;">Titre</th>
-            <th>Description</th>
-            <th class="text-center" style="width: 100px;">Durée (min)</th>
-            <th style="width: 150px;">Genre</th>
-            <th style="width: 150px;">Réalisateur</th>
-            <th class="text-center" style="width: 80px;">Année</th>
-            <th class="text-center" style="width: 140px;">Actions</th>
+            <th class="text-center" style="width: 50px;">ID</th>
+            <th style="width: 25%;">Titre</th>
+            <th style="width: 30%;">Description</th>
+            <th class="text-center" style="width: 70px;">Durée</th>
+            <th style="width: 12%;">Genre</th>
+            <th class="d-none d-lg-table-cell" style="width: 15%;">Réalisateur</th>
+            <th class="text-center d-none d-md-table-cell" style="width: 60px;">Année</th>
+            <th class="text-center" style="width: 100px;">Actions</th>
         </tr>
     </thead>
     <tbody id="movieTableBody"></tbody>
@@ -108,9 +108,9 @@ if (listScreenings) {
 
 const movieTableBody = document.getElementById('movieTableBody');
 
-// ==========================================
+
 // 🔍 FONCTIONS DE FILTRAGE
-// ==========================================
+
 
 /**
  * Filtre les films côté serveur via l'API
@@ -185,15 +185,15 @@ const setupDynamicFilters = (moviesList) => {
         filterYear.appendChild(option);
     });
 
-    console.log('✅ Filtres configurés:', {
+    console.log('Filtres configurés:', {
         genres: uniqueGenres.length,
         années: uniqueYears.length
     });
 };
 
-// ==========================================
+
 // 🎬 FONCTIONS D'AFFICHAGE
-// ==========================================
+
 
 /**
  * Crée une ligne HTML pour un film
@@ -203,7 +203,7 @@ const createMovieRow = (movie) => {
     tr.dataset.id = movie.id;
 
     // Tronquer la description pour l'affichage
-    const shortDescription = truncateText(movie.description, 80);
+    const shortDescription = truncateText(movie.description, 100);
     const fullDescription = (movie.description || '').replace(/"/g, '&quot;');
 
     tr.innerHTML = `
@@ -214,8 +214,8 @@ const createMovieRow = (movie) => {
         </td>
         <td class="text-center movie-duration">${movie.duration}</td>
         <td class="movie-genre">${movie.genre}</td>
-        <td class="movie-director">${movie.director || 'N/A'}</td>
-        <td class="text-center movie-year">${movie.release_year}</td>
+        <td class="movie-director d-none d-lg-table-cell">${movie.director || 'N/A'}</td>
+        <td class="text-center movie-year d-none d-md-table-cell">${movie.release_year}</td>
         <td class="text-center actions">
             <button class="btn btn-sm btn-info view-more-btn" data-id="${movie.id}" title="Voir plus">
                 <i class="bi bi-eye"></i>
@@ -300,14 +300,23 @@ const updatePaginationUI = () => {
     }
 };
 
-// ==========================================
-// ✏️ FONCTIONS D'ÉDITION
-// ==========================================
+
+//  FONCTIONS D'ÉDITION
+
+
+const cancelAllEdits = () => {
+    const editingRows = document.querySelectorAll('.editing-mode');
+    if (editingRows.length > 0) {
+        console.log('🔒 Annulation de', editingRows.length, 'édition(s) en cours');
+        renderMovies(); // Réafficher pour tout réinitialiser
+    }
+};
 
 /**
  * Active le mode édition sur une ligne
  */
 const enableEditMode = (row) => {
+    cancelAllEdits(); // Annuler les autres éditions en cours
     const movieId = row.dataset.id;
     const movie = state.filteredMovies.find(m => m.id == movieId);
 
@@ -331,11 +340,18 @@ const enableEditMode = (row) => {
     row.querySelector('.movie-genre').innerHTML =
         `<input type="text" class="inline-input" list="genreList" value="${movie.genre}" data-field="genre">`;
 
-    row.querySelector('.movie-director').innerHTML =
-        `<input type="text" class="inline-input" value="${movie.director || ''}" data-field="director">`;
+    // ✅ AJOUT : Vérifier si la colonne existe avant modification
+    const directorCell = row.querySelector('.movie-director');
+    if (directorCell) {
+        directorCell.innerHTML =
+            `<input type="text" class="inline-input" value="${movie.director || ''}" data-field="director">`;
+    }
 
-    row.querySelector('.movie-year').innerHTML =
-        `<input type="number" class="inline-input" min="1895" max="${currentYear}" value="${movie.release_year}" data-field="release_year">`;
+    const yearCell = row.querySelector('.movie-year');
+    if (yearCell) {
+        yearCell.innerHTML =
+            `<input type="number" class="inline-input" min="1895" max="${new Date().getFullYear()}" value="${movie.release_year}" data-field="release_year">`;
+    }
 
     // Remplacer les boutons d'action
     row.querySelector('.actions').innerHTML = `
@@ -372,8 +388,8 @@ const saveMovie = async (row) => {
         return;
     }
 
-    if (isNaN(movieData.duration) || movieData.duration < 1 || movieData.duration > 857) {
-        alert('La durée doit être entre 1 et 857 minutes');
+    if (isNaN(movieData.duration) || movieData.duration < 1 || movieData.duration > 85740) {
+        alert('La durée doit être entre 1 et 85740 minutes');
         return;
     }
 
@@ -438,9 +454,9 @@ const cancelEdit = () => {
     console.log('🚫 Édition annulée');
 };
 
-// ==========================================
-// 🗑️ FONCTION DE SUPPRESSION
-// ==========================================
+
+// FONCTION DE SUPPRESSION
+
 
 /**
  * Supprime un film
@@ -491,9 +507,9 @@ const executeDelete = async (movieId) => {
     }
 };
 
-// ==========================================
-// 👁️ MODAL "VOIR PLUS"
-// ==========================================
+
+// MODAL "VOIR PLUS"
+
 
 /**
  * Affiche la description complète dans une modal
@@ -660,9 +676,9 @@ const showFullDescription = (movieId) => {
     console.log('👁️ Modal ouverte pour:', movie.title);
 };
 
-// ==========================================
-// 🎯 GESTIONNAIRE D'ÉVÉNEMENTS PRINCIPAL
-// ==========================================
+
+// GESTIONNAIRE D'ÉVÉNEMENTS PRINCIPAL
+
 
 if (movieTableBody) {
     movieTableBody.addEventListener('click', async (e) => {
@@ -707,9 +723,9 @@ if (movieTableBody) {
     });
 }
 
-// ==========================================
+
 // 📄 PAGINATION - ÉVÉNEMENTS
-// ==========================================
+
 
 if (btnPrevMovie) {
     btnPrevMovie.addEventListener('click', () => {
@@ -734,14 +750,10 @@ if (btnNextMovie) {
     });
 }
 
-// ==========================================
-// 🔍 FILTRES - ÉVÉNEMENTS
-// ==========================================
 
-// Bouton Appliquer les filtres
-if (applyFiltersBtn) {
-    applyFiltersBtn.addEventListener('click', filterMovies);
-}
+// 🔍 FILTRES - ÉVÉNEMENTS
+
+
 
 // Bouton Réinitialiser
 if (resetButton) {
@@ -763,18 +775,9 @@ if (filterYear) {
     filterYear.addEventListener('change', filterMovies);
 }
 
-// Recherche avec debounce
-if (searchInput) {
-    let searchTimeout;
-    searchInput.addEventListener('input', () => {
-        clearTimeout(searchTimeout);
-        searchTimeout = setTimeout(filterMovies, 300);
-    });
-}
 
-// ==========================================
 // 📝 AUTO-COMPLÉTION DU FORMULAIRE
-// ==========================================
+
 
 /**
  * Remplit automatiquement le formulaire si le film existe dans la base de données
@@ -826,9 +829,9 @@ if (titleInput) {
     });
 }
 
-// ==========================================
+
 // ➕ FORMULAIRE D'AJOUT
-// ==========================================
+
 
 if (formMovie) {
     formMovie.addEventListener('submit', async (e) => {
@@ -850,8 +853,8 @@ if (formMovie) {
             return;
         }
 
-        if (isNaN(movieData.duration) || movieData.duration < 1 || movieData.duration > 857) {
-            alert('❌ La durée doit être entre 1 et 857 minutes');
+        if (isNaN(movieData.duration) || movieData.duration < 1 || movieData.duration > 85740) {
+            alert('❌ La durée doit être entre 1 et 85740 minutes');
             return;
         }
 
@@ -867,16 +870,16 @@ if (formMovie) {
             if (result.success) {
 
 
-                // ✅ Créer l'objet film avec l'ID retourné
+                // Créer l'objet film avec l'ID retourné
                 const newMovie = {
                     id: result.id || (Math.max(...movies.map(m => m.id), 0) + 1),
                     ...movieData
                 };
 
-                // ✅ Ajouter à la liste complète
+                // Ajouter à la liste complète
                 movies.push(newMovie);
 
-                // ✅ Ajouter au select
+                // Ajouter au select
                 if (movieSelect) {
                     const option = new Option(newMovie.title, newMovie.id);
                     movieSelect.appendChild(option);
@@ -904,9 +907,9 @@ if (formMovie) {
     });
 }
 
-// ==========================================
-// 📋 REMPLISSAGE DES DATALISTS
-// ==========================================
+
+// REMPLISSAGE DES DATALISTS
+
 
 // Datalist des genres
 const genreDatalist = document.getElementById('genreList');
@@ -930,9 +933,9 @@ if (titleDataList && moviesDatabase) {
     console.log('✅ Datalist titres remplie:', moviesDatabase.length);
 }
 
-// ==========================================
+
 // 🚀 REMPLIR LE SELECT
-// ==========================================
+
 
 /**
  * Remplit le select avec la liste des films
@@ -952,9 +955,9 @@ const fillMovieSelect = (moviesList) => {
     }
 };
 
-// ==========================================
-// 🎬 INITIALISATION
-// ==========================================
+
+// INITIALISATION
+
 
 /**
  * Initialise l'application
@@ -998,14 +1001,14 @@ const init = async () => {
     }
 };
 
-// ==========================================
-// ▶️ DÉMARRER L'APPLICATION
-// ==========================================
+
+//  DÉMARRER L'APPLICATION
+
 init();
 
-// ==========================================
-// 🎨 STYLES CSS POUR LES ANIMATIONS
-// ==========================================
+
+// STYLES CSS POUR LES ANIMATIONS
+
 const style = document.createElement('style');
 style.textContent = `
     @keyframes fadeIn {

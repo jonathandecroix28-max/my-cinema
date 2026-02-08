@@ -77,6 +77,22 @@ switch ($request) {
         $controller = new RoomController();
         $controller->update();
         break;
+    case 'deleted_rooms':
+        $controller = new RoomController();
+        $controller->deleted();
+        break;
+    case 'restore_room':
+        $controller = new RoomController();
+        $controller->restore();
+        break;
+    case 'permanent_delete_room':
+        $controller = new RoomController();
+        $controller->permanentDelete();
+        break;
+    case 'check_room_screenings':
+        $controller = new RoomController();
+        $controller->checkScreenings();
+        break;
     case 'list_screenings':
         $controller = new ScreeningController();
         $controller->list();

@@ -90,14 +90,15 @@ const createRoomRow = (room) => {
             </span>
         </td>
         <td class="text-center actions">
-            <button class="btn btn-sm btn-danger delete-row-btn" data-id="${room.id}" title="Supprimer">
-                <i class="bi bi-trash"></i>
-            </button>
+           
             <button class="btn btn-sm btn-warning edit-row-btn" data-id="${room.id}" title="Modifier">
                 <i class="bi bi-pencil"></i>
             </button>
             <button class="btn btn-sm btn-info view-more-btn" data-id="${room.id}" title="Détails">
                 <i class="bi bi-eye"></i>
+            </button> 
+            <button class="btn btn-sm btn-secondary delete-row-btn" data-id="${room.id}" title="Mettre dans la corbeille">
+                <i class="bi bi-trash"></i>
             </button>
         </td>
     `;
@@ -232,10 +233,44 @@ const autoFillForm = (selectedRoom) => {
 // ==========================================
 // ✏️ FONCTION POUR ACTIVER LE MODE ÉDITION
 // ==========================================
-const enableEditMode = (row) => {
+
+// ==========================================
+// 🔒 DÉSACTIVER TOUTES LES ÉDITIONS EN COURS
+// ==========================================
+
+/**
+ * Annule toutes les éditions en cours et réaffiche le tableau
+ */
+const cancelAllEdits = () => {
+    const editingRows = document.querySelectorAll('.editing-mode');
+    if (editingRows.length > 0) {
+        console.log('🔒 Annulation de', editingRows.length, 'édition(s) en cours');
+        renderRooms(); // Réafficher pour tout réinitialiser
+    }
+};
+
+const enableEditMode = async (row) => {
+    cancelAllEdits(); // Annuler les autres éditions en cours
     const roomId = row.dataset.id;
     const room = rooms.find(r => r.id == roomId);
     if (!room) return;
+
+    // ✅ NOUVELLE VÉRIFICATION : Vérifier les séances futures
+    if (room.active == 1) {
+        try {
+            const response = await fetch(`../backend/index.php?action=check_room_screenings&id=${roomId}`);
+            const result = await response.json();
+
+            if (result.has_future_screenings && result.count > 0) {
+                const msg = `⚠️ ATTENTION !\n\nCette salle a ${result.count} séance(s) future(s).\n\nSi vous la désactivez, ces séances ne seront plus disponibles à la réservation.\n\nVoulez-vous continuer ?`;
+                if (!confirm(msg)) {
+                    return;
+                }
+            }
+        } catch (error) {
+            console.warn('Impossible de vérifier les séances:', error);
+        }
+    }
 
     row.classList.add('editing-mode');
 
@@ -442,7 +477,7 @@ if (roomTableBody) {
             const roomId = e.target.closest('.delete-row-btn').dataset.id;
             const room = rooms.find(r => r.id == roomId);
 
-            if (room && confirm(`Supprimer la salle "${room.name}" ?\n\nCette action est irréversible.`)) {
+            if (room && confirm(`Mettre dans la corbeille ? "${room.name}" ?\n\n`)) {
                 await executeDelete('room', roomId);
             }
             return;

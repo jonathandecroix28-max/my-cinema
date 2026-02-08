@@ -131,6 +131,41 @@ class ScreeningRepository
         return $stmt->fetch(PDO::FETCH_ASSOC);
     }
 
+    public function hasFutureScreenings($roomId)
+    {
+        $sql = "
+        SELECT COUNT(*) as count 
+        FROM screenings 
+        WHERE room_id = :room_id 
+        AND start_time > NOW()
+    ";
+
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute([':room_id' => $roomId]);
+        $result = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        return $result['count'] > 0;
+    }
+
+    /**
+     * ✅ Compter les séances futures pour une salle
+     * 
+     */
+    public function countFutureScreenings($roomId)
+    {
+        $sql = "
+        SELECT COUNT(*) as count 
+        FROM screenings 
+        WHERE room_id = :room_id 
+        AND start_time > NOW()
+    ";
+
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute([':room_id' => $roomId]);
+        $result = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        return (int) $result['count'];
+    }
 
 }
 

@@ -53,6 +53,13 @@ export const apiDelete = async (type, id) => {
     });
 };
 
+export const apiRestore = async (type, id) => {
+    return await apiFetch(`restore_${type}`, {
+        method: 'POST',
+        query: { id }  // ✅ Séparé proprement
+    });
+};
+
 export const apiPut = async (type, id, data) => {
     const url = `${API_BASE_URL}?action=update_${type}&id=${id}`;
     const response = await fetch(url, {
@@ -91,4 +98,6 @@ export const sqlToDateTimeLocal = (sqlDateTime) => {
     const [h, m] = time.split(':');
     return `${date}T${h}:${m}`;
 };
+
+
 

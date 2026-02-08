@@ -1,17 +1,17 @@
-// ==========================================
-// SCREEN.JS - VERSION DYNAMIQUE COMPLÈTE
-// ==========================================
 
-// ✅ Imports
+// SCREEN.JS - VERSION DYNAMIQUE COMPLÈTE
+
+
+// Imports
 import { apiFetch, getCurrentDateTimeLocal, formatDate, apiDelete, apiPost, apiPut, sqlToDateTimeLocal } from './config.js';
 import { els } from './dom-elements.js';
 import { getPaginatedItems, getPageInfo, isFirstPage, isLastPage, disableButton, enableButton, ITEMS_PER_PAGE } from './pagination.js';
 
 const { listScreenings, movieSelect, roomSelect, screeningForm, stockScreening } = els;
 
-// ==========================================
-// 🌐 VARIABLES GLOBALES
-// ==========================================
+
+//  VARIABLES GLOBALES
+
 let screenings = []; // ✅ Changé en let
 let movies = [];     // ✅ Changé en let
 let rooms = [];      // ✅ Changé en let
@@ -22,9 +22,9 @@ let state = {
     itemsPerPage: ITEMS_PER_PAGE
 };
 
-// ==========================================
-// 🔄 FONCTION DE CHARGEMENT DES DONNÉES
-// ==========================================
+
+//  FONCTION DE CHARGEMENT DES DONNÉES
+
 const loadData = async () => {
     try {
         screenings = await apiFetch('list_screenings');
@@ -37,19 +37,19 @@ const loadData = async () => {
     }
 };
 
-// ✅ Chargement initial
+//  Chargement initial
 await loadData();
 
-// ==========================================
-// 🎯 ÉLÉMENTS DOM
-// ==========================================
+
+// ÉLÉMENTS DOM
+
 const btnPrevScreening = document.getElementById('btnPrevScreening');
 const btnNextScreening = document.getElementById('btnNextScreening');
 const pageInfoScreening = document.getElementById('pageInfoScreening');
 
-// ==========================================
-// 🔄 FONCTION POUR REMPLIR LES SELECTS
-// ==========================================
+
+// FONCTION POUR REMPLIR LES SELECTS
+
 const populateSelects = () => {
     // Remplir le select des films
     if (movieSelect && movies.length > 0) {
@@ -81,12 +81,12 @@ const populateSelects = () => {
     }
 };
 
-// ✅ Remplissage initial
+// Remplissage initial
 populateSelects();
 
-// ==========================================
-// 🛠️ FONCTIONS UTILITAIRES
-// ==========================================
+
+// FONCTIONS UTILITAIRES
+
 const displayMovie = (movie_id) => {
     const movie = movies.find(m => m.id == movie_id);
     return movie ? movie.title : 'Film inconnu';
@@ -97,18 +97,18 @@ const displayRoom = (room_id) => {
     return room ? `${room.name} (${room.type})` : 'Salle inconnue';
 };
 
-// ==========================================
-// 🔄 MISE À JOUR DU COMPTEUR
-// ==========================================
+
+// MISE À JOUR DU COMPTEUR
+
 const updateStockCounter = () => {
     if (stockScreening) {
         stockScreening.textContent = `Séance${screenings.length > 1 ? 's' : ''} programmée${screenings.length > 1 ? 's' : ''} : ${screenings.length} 🎟️`;
     }
 };
 
-// ==========================================
-// 📊 CRÉATION DU TABLEAU
-// ==========================================
+
+// CRÉATION DU TABLEAU
+
 const screeningTable = document.createElement('table');
 screeningTable.className = 'table table-bordered table-striped mt-4 table-hover';
 screeningTable.innerHTML = `
@@ -130,9 +130,9 @@ if (listScreenings) {
 
 const screeningTableBody = document.getElementById('screeningTableBody');
 
-// ==========================================
-// 🎨 FONCTION POUR CRÉER UNE LIGNE
-// ==========================================
+
+// FONCTION POUR CRÉER UNE LIGNE
+
 const createScreeningRow = (screening) => {
     const tr = document.createElement('tr');
     tr.dataset.id = screening.id;
@@ -142,23 +142,23 @@ const createScreeningRow = (screening) => {
         <td class="screening-room-id">${displayRoom(screening.room_id)}</td>
         <td class="text-center screening-startime">${formatDate(screening.start_time)}</td>
         <td class="text-center actions">
-            <button class="btn btn-sm btn-danger delete-row-btn" data-id="${screening.id}" title="Supprimer">
-                <i class="bi bi-trash"></i>
-            </button>
             <button class="btn btn-sm btn-warning edit-row-btn" data-id="${screening.id}" title="Modifier">
                 <i class="bi bi-pencil"></i>
             </button>
             <button class="btn btn-sm btn-info view-more-btn" data-id="${screening.id}" title="Détails">
                 <i class="bi bi-eye"></i>
             </button>
+            <button class="btn btn-sm btn-danger delete-row-btn" data-id="${screening.id}" title="Supprimer">
+                <i class="bi bi-trash"></i>
+            </button>
         </td>
     `;
     return tr;
 };
 
-// ==========================================
-// 🖼️ FONCTION POUR AFFICHER LES SÉANCES
-// ==========================================
+
+// FONCTION POUR AFFICHER LES SÉANCES
+
 const renderScreenings = () => {
     if (!screeningTableBody) return;
 
@@ -177,9 +177,9 @@ const renderScreenings = () => {
     updateStockCounter();
 };
 
-// ==========================================
-// 📄 MISE À JOUR DE L'UI DE PAGINATION
-// ==========================================
+
+// MISE À JOUR DE L'UI DE PAGINATION
+
 const updatePaginationUI = () => {
     if (pageInfoScreening) {
         pageInfoScreening.textContent = getPageInfo(state.currentPage, screenings.length, state.itemsPerPage);
@@ -198,9 +198,9 @@ const updatePaginationUI = () => {
     }
 };
 
-// ==========================================
-// 📄 GESTIONNAIRES DE PAGINATION
-// ==========================================
+
+// GESTIONNAIRES DE PAGINATION
+
 if (btnPrevScreening) {
     btnPrevScreening.addEventListener('click', () => {
         if (state.currentPage > 1) {
@@ -222,12 +222,23 @@ if (btnNextScreening) {
     });
 }
 
-// ==========================================
-// ✏️ FONCTION POUR ACTIVER LE MODE ÉDITION
-// ==========================================
+
+// FONCTION POUR ACTIVER LE MODE ÉDITION
+
+const cancelAllEdits = () => {
+    const editingRows = document.querySelectorAll('.editing-mode');
+    if (editingRows.length > 0) {
+        console.log('🔒 Annulation de', editingRows.length, 'édition(s) en cours');
+        renderScreenings(); // Adapter selon le nom de votre fonction render
+    }
+};
+
 const enableEditMode = (row) => {
+    cancelAllEdits(); // Annuler les autres éditions en cours
     const screeningId = row.dataset.id;
     const screening = screenings.find(s => s.id == screeningId);
+    const activeRooms = rooms.filter(room => room.active == 1);
+
     if (!screening) {
         alert('Séance introuvable');
         return;
@@ -239,16 +250,23 @@ const enableEditMode = (row) => {
         `<input type="datetime-local" class="inline-input" 
                 value="${sqlToDateTimeLocal(screening.start_time)}" 
                 data-field="start_time">`;
-    
+
     row.querySelector(".screening-movie-id").innerHTML =
         `<select class="inline-select" data-field="movie_id">
             ${movies.map(movie => `<option value="${movie.id}"${movie.id == screening.movie_id ? ' selected' : ''}>${movie.title}</option>`).join('')}
         </select>`;
-
-    row.querySelector(".screening-room-id").innerHTML =
-        `<select class="inline-select" data-field="room_id">
-            ${rooms.map(room => `<option value="${room.id}"${room.id == screening.room_id ? ' selected' : ''}>${room.name} (${room.type})</option>`).join('')}
+    if (activeRooms.length === 0) {
+        const option = new Option('Aucune salle active disponible', '');
+        option.disabled = true;
+        roomSelect.appendChild(option);
+        row.querySelector(".screening-room-id").innerHTML = `<span class="text-danger">Aucune salle active</span>`;
+        return;
+    } else {
+        row.querySelector(".screening-room-id").innerHTML =
+            `<select class="inline-select" data-field="room_id">
+            ${activeRooms.map(room => `<option value="${room.id}"${room.id == screening.room_id ? ' selected' : ''}>${room.name} (${room.type})</option>`).join('')}
         </select>`;
+    }
 
     row.querySelector(".actions").innerHTML = `
         <button class="btn btn-sm btn-success save-row-btn" data-id="${screening.id}" title="Sauvegarder">
@@ -260,9 +278,9 @@ const enableEditMode = (row) => {
     `;
 };
 
-// ==========================================
-// 💾 FONCTION POUR SAUVEGARDER
-// ==========================================
+
+// FONCTION POUR SAUVEGARDER
+
 const saveScreening = async (row) => {
     const screeningId = row.dataset.id;
     const screeningData = {
@@ -298,16 +316,16 @@ const saveScreening = async (row) => {
     }
 };
 
-// ==========================================
-// ❌ FONCTION POUR ANNULER
-// ==========================================
+
+// FONCTION POUR ANNULER
+
 const cancelEdit = () => {
     renderScreenings();
 };
 
-// ==========================================
-// 🗑️ FONCTION DE SUPPRESSION
-// ==========================================
+
+// FONCTION DE SUPPRESSION
+
 const executeDelete = async (type, id) => {
     try {
         const data = await apiDelete(type, id);
@@ -332,9 +350,9 @@ const executeDelete = async (type, id) => {
     }
 };
 
-// ==========================================
-// 👁️ FONCTION POUR AFFICHER LES DÉTAILS
-// ==========================================
+
+// FONCTION POUR AFFICHER LES DÉTAILS
+
 const showScreeningDetails = (screeningId) => {
     const screening = screenings.find(s => s.id == screeningId);
     if (!screening) return;
@@ -415,9 +433,9 @@ const showScreeningDetails = (screeningId) => {
     });
 };
 
-// ==========================================
-// 🖱️ GESTIONNAIRE D'ÉVÉNEMENTS PRINCIPAL
-// ==========================================
+
+// GESTIONNAIRE D'ÉVÉNEMENTS PRINCIPAL
+
 if (screeningTableBody) {
     screeningTableBody.addEventListener('click', async (e) => {
         const row = e.target.closest('tr');
@@ -427,7 +445,7 @@ if (screeningTableBody) {
         if (e.target.closest('.delete-row-btn')) {
             const screeningId = e.target.closest('.delete-row-btn').dataset.id;
             const screening = screenings.find(s => s.id == screeningId);
-            
+
             if (screening && confirm(`Supprimer la séance "${displayMovie(screening.movie_id)}" ?\n\nCette action est irréversible.`)) {
                 await executeDelete('screening', screeningId);
             }
@@ -461,9 +479,9 @@ if (screeningTableBody) {
     });
 }
 
-// ==========================================
-// 📝 FORMULAIRE D'AJOUT (DYNAMIQUE)
-// ==========================================
+
+// FORMULAIRE D'AJOUT (DYNAMIQUE)
+
 if (screeningForm) {
     screeningForm.addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -512,19 +530,19 @@ if (screeningForm) {
     });
 }
 
-// ==========================================
-// 📅 INITIALISATION DU CHAMP DATE/HEURE
-// ==========================================
+
+// INITIALISATION DU CHAMP DATE/HEURE
+
 const initializeStartTime = () => {
     const startTimeInput = document.getElementById('startTime');
 
     if (startTimeInput) {
         const minDateTime = getCurrentDateTimeLocal();
 
-        // ✅ Empêcher la sélection de dates passées
+        // Empêcher la sélection de dates passées
         startTimeInput.setAttribute('min', minDateTime);
 
-        // ✅ Pré-remplir avec l'heure actuelle + 1h
+        // Pré-remplir avec l'heure actuelle + 1h
         const oneHourLater = new Date();
         oneHourLater.setHours(oneHourLater.getHours() + 1);
         const year = oneHourLater.getFullYear();
@@ -536,12 +554,12 @@ const initializeStartTime = () => {
     }
 };
 
-// ✅ Initialisation au chargement
+// Initialisation au chargement
 initializeStartTime();
 
-// ==========================================
-// 🎬 AFFICHAGE INITIAL
-// ==========================================
+
+// AFFICHAGE INITIAL
+
 renderScreenings();
 
 console.log('✅ screen.js chargé avec succès', {
