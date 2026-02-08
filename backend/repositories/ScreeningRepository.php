@@ -44,30 +44,31 @@ class ScreeningRepository
         if (!$newMovie)
             return false;
 
-        $newDuration = $newMovie['duration'] + 15;
+        $newDuration = (int) $newMovie['duration'] + 15;
 
         $sql = "
         SELECT screenings.* FROM screenings 
         JOIN movies ON screenings.movie_id = movies.id
         WHERE screenings.room_id = :room_id 
-        AND :new_start < DATE_ADD(screenings.start_time, INTERVAL (movies.duration + 15) MINUTE)
-        AND DATE_ADD(:new_start, INTERVAL :new_duration MINUTE) > screenings.start_time
+        AND :new_start_1 < DATE_ADD(screenings.start_time, INTERVAL (movies.duration + 15) MINUTE)
+        AND DATE_ADD(:new_start_2, INTERVAL :new_duration MINUTE) > screenings.start_time
     ";
 
-        // ✅ Exclure la séance en cours de modification
         if ($excludeScreeningId !== null) {
             $sql .= " AND screenings.id != :exclude_id";
         }
 
         $stmt = $this->pdo->prepare($sql);
+
         $params = [
-            ':room_id' => $room_id,
-            ':new_start' => $start_time,
+            ':room_id' => (int) $room_id,
+            ':new_start_1' => $start_time,
+            ':new_start_2' => $start_time,
             ':new_duration' => $newDuration
         ];
 
         if ($excludeScreeningId !== null) {
-            $params[':exclude_id'] = $excludeScreeningId;
+            $params[':exclude_id'] = (int) $excludeScreeningId;
         }
 
         $stmt->execute($params);
@@ -129,4 +130,7 @@ class ScreeningRepository
         $stmt->execute([':id' => $id]);
         return $stmt->fetch(PDO::FETCH_ASSOC);
     }
+
+
 }
+

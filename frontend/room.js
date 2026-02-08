@@ -1,9 +1,19 @@
+// ==========================================
+// ROOM.JS - VERSION DYNAMIQUE COMPLÈTE
+// ==========================================
+
 // ✅ Imports
 import { els } from './dom-elements.js';
 import { apiFetch, apiDelete, apiPost, apiPut } from './config.js';
 import { getPaginatedItems, getPageInfo, isFirstPage, isLastPage, disableButton, enableButton, ITEMS_PER_PAGE } from './pagination.js';
 import { roomsDatabase } from './room-data.js';
+
 const { roomSelect, formRoom, listScreenings, stockRoom } = els;
+
+// ==========================================
+// 🌐 VARIABLES GLOBALES
+// ==========================================
+let rooms = []; // ✅ Changé en let pour pouvoir modifier
 
 // État de la pagination
 let state = {
@@ -11,15 +21,32 @@ let state = {
     itemsPerPage: ITEMS_PER_PAGE
 };
 
-// Récupération des salles
-const rooms = await apiFetch('list_rooms');
+// ==========================================
+// 🔄 FONCTION DE CHARGEMENT DES DONNÉES
+// ==========================================
+const loadRooms = async () => {
+    try {
+        rooms = await apiFetch('list_rooms');
+        console.log('✅ Salles chargées:', rooms.length);
+    } catch (error) {
+        console.error('❌ Erreur chargement:', error);
+        alert('Erreur lors du chargement des salles');
+    }
+};
 
-// Boutons de pagination
+// ✅ Chargement initial
+await loadRooms();
+
+// ==========================================
+// 🎯 ÉLÉMENTS DOM
+// ==========================================
 const btnPrevRoom = document.getElementById('btnPrevRoom');
 const btnNextRoom = document.getElementById('btnNextRoom');
 const pageInfoRoom = document.getElementById('pageInfoRoom');
 
-// ✅ CRÉATION DU TABLEAU - Design uniforme
+// ==========================================
+// 📊 CRÉATION DU TABLEAU
+// ==========================================
 const roomTable = document.createElement('table');
 roomTable.className = 'table table-bordered table-striped mt-4 table-hover';
 roomTable.innerHTML = `
@@ -42,7 +69,9 @@ if (listScreenings) {
 
 const roomTableBody = document.getElementById('roomTableBody');
 
-// ✅ FONCTION POUR CRÉER UNE LIGNE
+// ==========================================
+// 🎨 FONCTION POUR CRÉER UNE LIGNE
+// ==========================================
 const createRoomRow = (room) => {
     const tr = document.createElement('tr');
     tr.dataset.id = room.id;
@@ -75,7 +104,9 @@ const createRoomRow = (room) => {
     return tr;
 };
 
-// Fonction pour afficher les salles paginées
+// ==========================================
+// 🖼️ FONCTION POUR AFFICHER LES SALLES
+// ==========================================
 const renderRooms = () => {
     if (!roomTableBody) return;
 
@@ -91,9 +122,39 @@ const renderRooms = () => {
     }
 
     updatePaginationUI();
+    updateStockCounter();
+    updateRoomSelect();
 };
 
-// Fonction pour mettre à jour l'UI de pagination
+// ==========================================
+// 🔄 MISE À JOUR DU COMPTEUR
+// ==========================================
+const updateStockCounter = () => {
+    if (stockRoom) {
+        stockRoom.textContent = `Salle${rooms.length > 1 ? 's' : ''} en stock: ${rooms.length} 🏟️`;
+    }
+};
+
+// ==========================================
+// 🔄 MISE À JOUR DU SELECT
+// ==========================================
+const updateRoomSelect = () => {
+    if (roomSelect) {
+        roomSelect.innerHTML = '<option value="">Choisissez une salle...</option>';
+        rooms.forEach(room => {
+            const option = new Option(
+                `${room.name} (${room.capacity} places - ${room.type})`,
+                room.id
+            );
+            if (!room.active) option.disabled = true;
+            roomSelect.appendChild(option);
+        });
+    }
+};
+
+// ==========================================
+// 📄 MISE À JOUR DE L'UI DE PAGINATION
+// ==========================================
 const updatePaginationUI = () => {
     if (pageInfoRoom) {
         pageInfoRoom.textContent = getPageInfo(state.currentPage, rooms.length, state.itemsPerPage);
@@ -112,12 +173,15 @@ const updatePaginationUI = () => {
     }
 };
 
-// Gestionnaires des boutons de pagination
+// ==========================================
+// 📄 GESTIONNAIRES DE PAGINATION
+// ==========================================
 if (btnPrevRoom) {
     btnPrevRoom.addEventListener('click', () => {
         if (state.currentPage > 1) {
             state.currentPage--;
             renderRooms();
+            console.log('⬅️ Page précédente:', state.currentPage);
         }
     });
 }
@@ -128,10 +192,14 @@ if (btnNextRoom) {
         if (state.currentPage < totalPages) {
             state.currentPage++;
             renderRooms();
+            console.log('➡️ Page suivante:', state.currentPage);
         }
     });
 }
 
+// ==========================================
+// �� AUTO-REMPLISSAGE DU FORMULAIRE
+// ==========================================
 const autoFillForm = (selectedRoom) => {
     let room = roomsDatabase.find(r => r.name.toLowerCase() === selectedRoom.toLowerCase());
     if (!room) {
@@ -140,12 +208,30 @@ const autoFillForm = (selectedRoom) => {
 
     if (room) {
         const capacityInput = document.getElementById('capacity');
+        const typeInput = document.getElementById('typeRoom');
+        const activeInput = document.getElementById('activeRoom');
+
         if (capacityInput) {
             capacityInput.value = room.capacity;
+            capacityInput.style.backgroundColor = '#d4edda';
+            setTimeout(() => { capacityInput.style.backgroundColor = ''; }, 1000);
         }
-    };
+        if (typeInput) {
+            typeInput.value = room.type;
+            typeInput.style.backgroundColor = '#d4edda';
+            setTimeout(() => { typeInput.style.backgroundColor = ''; }, 1000);
+        }
+        if (activeInput) {
+            activeInput.value = room.active;
+            activeInput.style.backgroundColor = '#d4edda';
+            setTimeout(() => { activeInput.style.backgroundColor = ''; }, 1000);
+        }
+    }
 };
-// Fonction pour activer le mode édition
+
+// ==========================================
+// ✏️ FONCTION POUR ACTIVER LE MODE ÉDITION
+// ==========================================
 const enableEditMode = (row) => {
     const roomId = row.dataset.id;
     const room = rooms.find(r => r.id == roomId);
@@ -182,7 +268,9 @@ const enableEditMode = (row) => {
     `;
 };
 
-// Fonction pour sauvegarder les modifications
+// ==========================================
+// 💾 FONCTION POUR SAUVEGARDER LES MODIFICATIONS
+// ==========================================
 const saveRoom = async (row) => {
     const roomId = row.dataset.id;
 
@@ -206,55 +294,62 @@ const saveRoom = async (row) => {
     try {
         const result = await apiPut('room', roomId, roomData);
         if (result.success) {
-            alert('Salle modifiée avec succès ! 🏟️');
+            alert('✅ Salle modifiée avec succès ! 🏟️');
 
+            // ✅ Mise à jour locale
             const roomIndex = rooms.findIndex(r => r.id == roomId);
             if (roomIndex !== -1) {
                 rooms[roomIndex] = { ...rooms[roomIndex], ...roomData };
             }
 
             renderRooms();
+            console.log('✅ Salle modifiée, ID:', roomId);
         } else {
-            alert(`Erreur : ${result.error || 'Erreur inconnue'}`);
+            alert(`❌ Erreur : ${result.error || 'Erreur inconnue'}`);
         }
     } catch (error) {
-        alert(`Erreur : ${error.message}`);
+        console.error('❌ Erreur:', error);
+        alert(`❌ Erreur : ${error.message}`);
     }
 };
 
-// Fonction pour annuler l'édition
+// ==========================================
+// ❌ FONCTION POUR ANNULER L'ÉDITION
+// ==========================================
 const cancelEdit = () => {
     renderRooms();
 };
 
-// Fonction de suppression
+// ==========================================
+// 🗑️ FONCTION DE SUPPRESSION
+// ==========================================
 const executeDelete = async (type, id) => {
     try {
         const result = await apiDelete(type, id);
 
         if (result.success) {
-            alert(`${type} supprimé !`);
+            alert('✅ Salle supprimée !');
 
+            // ✅ Suppression locale
             const index = rooms.findIndex(r => r.id == id);
             if (index !== -1) {
                 rooms.splice(index, 1);
             }
 
-            if (roomSelect) {
-                const option = roomSelect?.querySelector(`option[value="${id}"]`);
-                if (option) option.remove();
-            }
-
             renderRooms();
+            console.log('🗑️ Salle supprimée, ID:', id);
         } else {
-            alert(result.error || 'Erreur lors de la suppression');
+            alert(`❌ Erreur : ${result.error || 'Erreur inconnue'}`);
         }
     } catch (error) {
-        alert(`Erreur lors de la suppression : ${error.message}`);
+        console.error('❌ Erreur:', error);
+        alert(`❌ Erreur : ${error.message}`);
     }
 };
 
-// Fonction pour afficher les détails dans une modal
+// ==========================================
+// 👁️ FONCTION POUR AFFICHER LES DÉTAILS
+// ==========================================
 const showRoomDetails = (roomId) => {
     const room = rooms.find(r => r.id == roomId);
     if (!room) return;
@@ -334,35 +429,44 @@ const showRoomDetails = (roomId) => {
     });
 };
 
-// Gestionnaire d'événements PRINCIPAL
+// ==========================================
+// 🖱️ GESTIONNAIRE D'ÉVÉNEMENTS PRINCIPAL
+// ==========================================
 if (roomTableBody) {
     roomTableBody.addEventListener('click', async (e) => {
         const row = e.target.closest('tr');
         if (!row) return;
 
+        // Suppression
         if (e.target.closest('.delete-row-btn')) {
             const roomId = e.target.closest('.delete-row-btn').dataset.id;
-            if (confirm("Supprimer cette salle ?")) {
-                await executeDelete('room', roomId, row);
+            const room = rooms.find(r => r.id == roomId);
+
+            if (room && confirm(`Supprimer la salle "${room.name}" ?\n\nCette action est irréversible.`)) {
+                await executeDelete('room', roomId);
             }
             return;
         }
 
+        // Modification
         if (e.target.closest('.edit-row-btn')) {
             enableEditMode(row);
             return;
         }
 
+        // Sauvegarde
         if (e.target.closest('.save-row-btn')) {
             await saveRoom(row);
             return;
         }
 
+        // Annulation
         if (e.target.closest('.cancel-edit-btn')) {
-            cancelEdit(row);
+            cancelEdit();
             return;
         }
 
+        // Détails
         if (e.target.closest('.view-more-btn')) {
             const roomId = e.target.closest('.view-more-btn').dataset.id;
             showRoomDetails(roomId);
@@ -371,7 +475,9 @@ if (roomTableBody) {
     });
 }
 
-// Formulaire d'ajout
+// ==========================================
+// 📝 FORMULAIRE D'AJOUT (DYNAMIQUE)
+// ==========================================
 if (formRoom) {
     formRoom.addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -384,7 +490,7 @@ if (formRoom) {
         };
 
         if (!data.name || !data.capacity || data.capacity <= 0 || data.capacity > 1000) {
-            alert('Veuillez remplir tous les champs correctement (capacité entre 1 et 1000)');
+            alert('❌ Veuillez remplir tous les champs correctement (capacité entre 1 et 1000)');
             return;
         }
 
@@ -392,17 +498,32 @@ if (formRoom) {
             const result = await apiPost('add_room', data);
 
             if (result.success) {
-                alert('Salle ajoutée avec succès ! 🏟️');
-                location.reload();
+                alert('✅ Salle ajoutée avec succès ! 🏟️');
+
+                // ✅ Recharger les données dynamiquement
+                await loadRooms();
+
+                // ✅ Réinitialiser le formulaire
+                formRoom.reset();
+
+                // ✅ Réafficher la première page
+                state.currentPage = 1;
+                renderRooms();
+
+                console.log('✅ Salle ajoutée');
             } else {
-                alert(`Erreur : ${result.error || 'Erreur inconnue'}`);
+                alert(`❌ Erreur : ${result.error || 'Erreur inconnue'}`);
             }
         } catch (error) {
-            alert(`Erreur lors de l'ajout de la salle : ${error.message}`);
+            console.error('❌ Erreur:', error);
+            alert(`❌ Erreur : ${error.message}`);
         }
     });
 }
 
+// ==========================================
+// 🤖 ÉVÉNEMENTS AUTO-COMPLÉTION
+// ==========================================
 const nameInput = document.getElementById('nameRoom');
 if (nameInput) {
     nameInput.addEventListener('input', (e) => {
@@ -414,12 +535,15 @@ if (nameInput) {
 
     nameInput.addEventListener('blur', (e) => {
         const selectedRoom = e.target.value;
-        if (!selectedRoom.trim()) {
+        if (selectedRoom.trim()) {
             autoFillForm(selectedRoom);
         }
     });
-};
+}
 
+// ==========================================
+// 📋 DATALIST POUR AUTO-COMPLÉTION
+// ==========================================
 const roomDataList = document.getElementById('listRoom');
 if (roomDataList && roomsDatabase) {
     roomsDatabase.forEach(room => {
@@ -428,14 +552,12 @@ if (roomDataList && roomsDatabase) {
         roomDataList.appendChild(option);
     });
 }
-// Afficher le compteur
-if (stockRoom) {
-    stockRoom.textContent = `Salle${rooms.length > 1 ? 's' : ''} en stock: ${rooms.length} 🏟️`;
-}
 
-// Affichage initial
+// ==========================================
+// 🎬 AFFICHAGE INITIAL
+// ==========================================
 renderRooms();
 
-console.log('✅ room.js chargé', {
+console.log('✅ room.js chargé avec succès', {
     rooms: rooms.length
 });

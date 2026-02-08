@@ -1,3 +1,7 @@
+// ==========================================
+// SCREEN.JS - VERSION DYNAMIQUE COMPLÈTE
+// ==========================================
+
 // ✅ Imports
 import { apiFetch, getCurrentDateTimeLocal, formatDate, apiDelete, apiPost, apiPut, sqlToDateTimeLocal } from './config.js';
 import { els } from './dom-elements.js';
@@ -5,53 +9,84 @@ import { getPaginatedItems, getPageInfo, isFirstPage, isLastPage, disableButton,
 
 const { listScreenings, movieSelect, roomSelect, screeningForm, stockScreening } = els;
 
+// ==========================================
+// 🌐 VARIABLES GLOBALES
+// ==========================================
+let screenings = []; // ✅ Changé en let
+let movies = [];     // ✅ Changé en let
+let rooms = [];      // ✅ Changé en let
+
 // État de la pagination
 let state = {
     currentPage: 1,
     itemsPerPage: ITEMS_PER_PAGE
 };
 
-// Récupération des données
-const screenings = await apiFetch('list_screenings');
-const movies = await apiFetch('list_movies');
-const rooms = await apiFetch('list_rooms');
+// ==========================================
+// 🔄 FONCTION DE CHARGEMENT DES DONNÉES
+// ==========================================
+const loadData = async () => {
+    try {
+        screenings = await apiFetch('list_screenings');
+        movies = await apiFetch('list_movies');
+        rooms = await apiFetch('list_rooms');
+        console.log('✅ Données chargées:', { screenings: screenings.length, movies: movies.length, rooms: rooms.length });
+    } catch (error) {
+        console.error('❌ Erreur chargement:', error);
+        alert('Erreur lors du chargement des données');
+    }
+};
 
-console.log('Données chargées:', { screenings: screenings.length, movies: movies.length, rooms: rooms.length });
+// ✅ Chargement initial
+await loadData();
 
-// Boutons de pagination
+// ==========================================
+// 🎯 ÉLÉMENTS DOM
+// ==========================================
 const btnPrevScreening = document.getElementById('btnPrevScreening');
 const btnNextScreening = document.getElementById('btnNextScreening');
 const pageInfoScreening = document.getElementById('pageInfoScreening');
 
-// Remplir les selects
-if (movieSelect && movies.length > 0) {
-    movies.forEach(movie => {
-        const option = new Option(movie.title, movie.id);
-        movieSelect.appendChild(option);
-    });
-}
-
-if (roomSelect && rooms.length > 0) {
-    // ✅ Filtrer pour ne garder que les salles actives
-    const activeRooms = rooms.filter(room => room.active == 1);
-
-    if (activeRooms.length === 0) {
-        // Si aucune salle active, afficher un message
-        const option = new Option('Aucune salle active disponible', '');
-        option.disabled = true;
-        roomSelect.appendChild(option);
-    } else {
-        activeRooms.forEach(room => {
-            const option = new Option(
-                `${room.name} (${room.capacity} places - ${room.type})`,
-                room.id
-            );
-            roomSelect.appendChild(option);
+// ==========================================
+// 🔄 FONCTION POUR REMPLIR LES SELECTS
+// ==========================================
+const populateSelects = () => {
+    // Remplir le select des films
+    if (movieSelect && movies.length > 0) {
+        movieSelect.innerHTML = '<option value="">Choisissez un film...</option>';
+        movies.forEach(movie => {
+            const option = new Option(movie.title, movie.id);
+            movieSelect.appendChild(option);
         });
     }
-}
 
-// Fonctions utilitaires
+    // Remplir le select des salles (SEULEMENT les actives)
+    if (roomSelect && rooms.length > 0) {
+        roomSelect.innerHTML = '<option value="">Choisissez une salle...</option>';
+        const activeRooms = rooms.filter(room => room.active == 1);
+
+        if (activeRooms.length === 0) {
+            const option = new Option('Aucune salle active disponible', '');
+            option.disabled = true;
+            roomSelect.appendChild(option);
+        } else {
+            activeRooms.forEach(room => {
+                const option = new Option(
+                    `${room.name} (${room.capacity} places - ${room.type})`,
+                    room.id
+                );
+                roomSelect.appendChild(option);
+            });
+        }
+    }
+};
+
+// ✅ Remplissage initial
+populateSelects();
+
+// ==========================================
+// 🛠️ FONCTIONS UTILITAIRES
+// ==========================================
 const displayMovie = (movie_id) => {
     const movie = movies.find(m => m.id == movie_id);
     return movie ? movie.title : 'Film inconnu';
@@ -62,9 +97,18 @@ const displayRoom = (room_id) => {
     return room ? `${room.name} (${room.type})` : 'Salle inconnue';
 };
 
+// ==========================================
+// 🔄 MISE À JOUR DU COMPTEUR
+// ==========================================
+const updateStockCounter = () => {
+    if (stockScreening) {
+        stockScreening.textContent = `Séance${screenings.length > 1 ? 's' : ''} programmée${screenings.length > 1 ? 's' : ''} : ${screenings.length} 🎟️`;
+    }
+};
 
-
-// ✅ CRÉATION DU TABLEAU
+// ==========================================
+// 📊 CRÉATION DU TABLEAU
+// ==========================================
 const screeningTable = document.createElement('table');
 screeningTable.className = 'table table-bordered table-striped mt-4 table-hover';
 screeningTable.innerHTML = `
@@ -86,7 +130,9 @@ if (listScreenings) {
 
 const screeningTableBody = document.getElementById('screeningTableBody');
 
-// ✅ FONCTION POUR CRÉER UNE LIGNE
+// ==========================================
+// 🎨 FONCTION POUR CRÉER UNE LIGNE
+// ==========================================
 const createScreeningRow = (screening) => {
     const tr = document.createElement('tr');
     tr.dataset.id = screening.id;
@@ -110,7 +156,9 @@ const createScreeningRow = (screening) => {
     return tr;
 };
 
-// Fonction pour afficher les séances paginées
+// ==========================================
+// 🖼️ FONCTION POUR AFFICHER LES SÉANCES
+// ==========================================
 const renderScreenings = () => {
     if (!screeningTableBody) return;
 
@@ -126,9 +174,12 @@ const renderScreenings = () => {
     }
 
     updatePaginationUI();
+    updateStockCounter();
 };
 
-// Fonction pour mettre à jour l'UI de pagination
+// ==========================================
+// 📄 MISE À JOUR DE L'UI DE PAGINATION
+// ==========================================
 const updatePaginationUI = () => {
     if (pageInfoScreening) {
         pageInfoScreening.textContent = getPageInfo(state.currentPage, screenings.length, state.itemsPerPage);
@@ -147,12 +198,15 @@ const updatePaginationUI = () => {
     }
 };
 
-// Gestionnaires des boutons de pagination
+// ==========================================
+// 📄 GESTIONNAIRES DE PAGINATION
+// ==========================================
 if (btnPrevScreening) {
     btnPrevScreening.addEventListener('click', () => {
         if (state.currentPage > 1) {
             state.currentPage--;
             renderScreenings();
+            console.log('⬅️ Page précédente:', state.currentPage);
         }
     });
 }
@@ -163,11 +217,14 @@ if (btnNextScreening) {
         if (state.currentPage < totalPages) {
             state.currentPage++;
             renderScreenings();
+            console.log('➡️ Page suivante:', state.currentPage);
         }
     });
 }
 
-// Fonction pour activer le mode édition
+// ==========================================
+// ✏️ FONCTION POUR ACTIVER LE MODE ÉDITION
+// ==========================================
 const enableEditMode = (row) => {
     const screeningId = row.dataset.id;
     const screening = screenings.find(s => s.id == screeningId);
@@ -182,6 +239,7 @@ const enableEditMode = (row) => {
         `<input type="datetime-local" class="inline-input" 
                 value="${sqlToDateTimeLocal(screening.start_time)}" 
                 data-field="start_time">`;
+    
     row.querySelector(".screening-movie-id").innerHTML =
         `<select class="inline-select" data-field="movie_id">
             ${movies.map(movie => `<option value="${movie.id}"${movie.id == screening.movie_id ? ' selected' : ''}>${movie.title}</option>`).join('')}
@@ -202,7 +260,9 @@ const enableEditMode = (row) => {
     `;
 };
 
-// Fonction pour sauvegarder
+// ==========================================
+// 💾 FONCTION POUR SAUVEGARDER
+// ==========================================
 const saveScreening = async (row) => {
     const screeningId = row.dataset.id;
     const screeningData = {
@@ -212,57 +272,69 @@ const saveScreening = async (row) => {
     };
 
     if (!screeningData.movie_id || !screeningData.room_id || !screeningData.start_time) {
-        alert('Veuillez remplir tous les champs');
+        alert('❌ Veuillez remplir tous les champs');
         return;
     }
 
     try {
         const result = await apiPut('screening', screeningId, screeningData);
         if (result && result.success) {
-            alert('Séance mise à jour ! 🎬');
+            alert('✅ Séance mise à jour ! 🎬');
 
+            // ✅ Mise à jour locale
             const screeningIndex = screenings.findIndex(s => s.id == screeningId);
             if (screeningIndex !== -1) {
                 screenings[screeningIndex] = { ...screenings[screeningIndex], ...screeningData };
             }
 
             renderScreenings();
+            console.log('✅ Séance modifiée, ID:', screeningId);
         } else {
-            alert(result.error || 'Erreur lors de la mise à jour');
+            alert(`❌ Erreur : ${result.error || 'Erreur lors de la mise à jour'}`);
         }
     } catch (error) {
-        alert(`Erreur lors de la mise à jour : ${error.message}`);
+        console.error('❌ Erreur:', error);
+        alert(`❌ Erreur : ${error.message}`);
     }
 };
 
-// Fonction pour annuler
+// ==========================================
+// ❌ FONCTION POUR ANNULER
+// ==========================================
 const cancelEdit = () => {
     renderScreenings();
 };
 
-// Fonction de suppression
+// ==========================================
+// 🗑️ FONCTION DE SUPPRESSION
+// ==========================================
 const executeDelete = async (type, id) => {
     try {
         const data = await apiDelete(type, id);
 
         if (data.success) {
-            alert(`${type} supprimé !`);
+            alert('✅ Séance supprimée !');
 
+            // ✅ Suppression locale
             const index = screenings.findIndex(s => s.id == id);
             if (index !== -1) {
                 screenings.splice(index, 1);
             }
 
             renderScreenings();
+            console.log('🗑️ Séance supprimée, ID:', id);
         } else {
-            alert(data.error || 'Erreur lors de la suppression');
+            alert(`❌ Erreur : ${data.error || 'Erreur lors de la suppression'}`);
         }
     } catch (error) {
-        alert(`Erreur : ${error.message}`);
+        console.error('❌ Erreur:', error);
+        alert(`❌ Erreur : ${error.message}`);
     }
 };
 
-// Fonction pour afficher les détails
+// ==========================================
+// 👁️ FONCTION POUR AFFICHER LES DÉTAILS
+// ==========================================
 const showScreeningDetails = (screeningId) => {
     const screening = screenings.find(s => s.id == screeningId);
     if (!screening) return;
@@ -343,35 +415,44 @@ const showScreeningDetails = (screeningId) => {
     });
 };
 
-// Gestionnaire d'événements PRINCIPAL
+// ==========================================
+// 🖱️ GESTIONNAIRE D'ÉVÉNEMENTS PRINCIPAL
+// ==========================================
 if (screeningTableBody) {
     screeningTableBody.addEventListener('click', async (e) => {
         const row = e.target.closest('tr');
         if (!row) return;
 
+        // Suppression
         if (e.target.closest('.delete-row-btn')) {
             const screeningId = e.target.closest('.delete-row-btn').dataset.id;
-            if (confirm("Supprimer cette séance ?")) {
-                await executeDelete('screening', screeningId, row);
+            const screening = screenings.find(s => s.id == screeningId);
+            
+            if (screening && confirm(`Supprimer la séance "${displayMovie(screening.movie_id)}" ?\n\nCette action est irréversible.`)) {
+                await executeDelete('screening', screeningId);
             }
             return;
         }
 
+        // Modification
         if (e.target.closest('.edit-row-btn')) {
             enableEditMode(row);
             return;
         }
 
+        // Sauvegarde
         if (e.target.closest('.save-row-btn')) {
             await saveScreening(row);
             return;
         }
 
+        // Annulation
         if (e.target.closest('.cancel-edit-btn')) {
-            cancelEdit(row);
+            cancelEdit();
             return;
         }
 
+        // Détails
         if (e.target.closest('.view-more-btn')) {
             const screeningId = e.target.closest('.view-more-btn').dataset.id;
             showScreeningDetails(screeningId);
@@ -380,7 +461,9 @@ if (screeningTableBody) {
     });
 }
 
-// Formulaire d'ajout
+// ==========================================
+// 📝 FORMULAIRE D'AJOUT (DYNAMIQUE)
+// ==========================================
 if (screeningForm) {
     screeningForm.addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -392,7 +475,7 @@ if (screeningForm) {
         };
 
         if (!data.movie_id || !data.room_id || !data.start_time) {
-            alert('Veuillez remplir tous les champs');
+            alert('❌ Veuillez remplir tous les champs');
             return;
         }
 
@@ -400,47 +483,65 @@ if (screeningForm) {
             const result = await apiPost('add_screening', data);
 
             if (result.success) {
-                alert('Séance créée avec succès ! 🎬');
-                location.reload();
+                alert('✅ Séance créée avec succès ! 🎬');
+
+                // ✅ Recharger les données dynamiquement
+                await loadData();
+
+                // ✅ Réinitialiser le formulaire
+                screeningForm.reset();
+
+                // ✅ Réinitialiser l'heure par défaut
+                initializeStartTime();
+
+                // ✅ Mettre à jour les selects
+                populateSelects();
+
+                // ✅ Réafficher la première page
+                state.currentPage = 1;
+                renderScreenings();
+
+                console.log('✅ Séance ajoutée');
             } else {
-                alert(`Erreur : ${result.error || 'Erreur inconnue'}`);
+                alert(`❌ Erreur : ${result.error || 'Erreur inconnue'}`);
             }
         } catch (error) {
-            alert(`Erreur lors de la création de la séance : ${error.message}`);
+            console.error('❌ Erreur:', error);
+            alert(`❌ Erreur : ${error.message}`);
         }
     });
 }
 
-const startTimeInput = document.getElementById('startTime');
+// ==========================================
+// 📅 INITIALISATION DU CHAMP DATE/HEURE
+// ==========================================
+const initializeStartTime = () => {
+    const startTimeInput = document.getElementById('startTime');
 
-if (startTimeInput) {
-    const minDateTime = getCurrentDateTimeLocal();
+    if (startTimeInput) {
+        const minDateTime = getCurrentDateTimeLocal();
 
-    // ✅ Empêcher la sélection de dates passées dans le formulaire d'ajout
-    startTimeInput.setAttribute('min', minDateTime);
+        // ✅ Empêcher la sélection de dates passées
+        startTimeInput.setAttribute('min', minDateTime);
 
-    // ✅ Optionnel : Pré-remplir avec l'heure actuelle + 1h (plus pratique)
-    const oneHourLater = new Date();
-    oneHourLater.setHours(oneHourLater.getHours() + 1);
-    const year = oneHourLater.getFullYear();
-    const month = String(oneHourLater.getMonth() + 1).padStart(2, '0');
-    const day = String(oneHourLater.getDate()).padStart(2, '0');
-    const hours = String(oneHourLater.getHours()).padStart(2, '0');
-    const minutes = '00'; // Arrondir à l'heure pile
-    startTimeInput.value = `${year}-${month}-${day}T${hours}:${minutes}`;
-}
+        // ✅ Pré-remplir avec l'heure actuelle + 1h
+        const oneHourLater = new Date();
+        oneHourLater.setHours(oneHourLater.getHours() + 1);
+        const year = oneHourLater.getFullYear();
+        const month = String(oneHourLater.getMonth() + 1).padStart(2, '0');
+        const day = String(oneHourLater.getDate()).padStart(2, '0');
+        const hours = String(oneHourLater.getHours()).padStart(2, '0');
+        const minutes = '00'; // Arrondir à l'heure pile
+        startTimeInput.value = `${year}-${month}-${day}T${hours}:${minutes}`;
+    }
+};
 
+// ✅ Initialisation au chargement
+initializeStartTime();
 
-
-
-// Remplir le select des salles (SEULEMENT les actives)
-
-// Afficher le compteur
-if (stockScreening) {
-    stockScreening.textContent = `Séance${screenings.length > 1 ? 's' : ''} programmée${screenings.length > 1 ? 's' : ''} : ${screenings.length} 🎟️`;
-}
-
-// Affichage initial
+// ==========================================
+// 🎬 AFFICHAGE INITIAL
+// ==========================================
 renderScreenings();
 
 console.log('✅ screen.js chargé avec succès', {

@@ -3,9 +3,11 @@ class MovieService
 {
     private $movieRepo;
 
+
     public function __construct()
     {
         $this->movieRepo = new MovieRepository();
+
     }
 
     /**
@@ -171,12 +173,23 @@ class MovieService
     /**
      * Supprimer un film
      */
+    /**
+     * Supprimer un film
+     */
     public function deleteMovie($id)
     {
         if (!$this->movieRepo->findById($id)) {
             return [
                 "success" => false,
                 "error" => "Le film n'existe pas"
+            ];
+        }
+
+        // ✅ Vérifier si le film a des séances associées (directement via MovieRepository)
+        if ($this->movieRepo->hasScreenings($id)) {
+            return [
+                "success" => false,
+                "error" => "Impossible de supprimer ce film : il possède des séances associées. Veuillez d'abord supprimer les séances."
             ];
         }
 

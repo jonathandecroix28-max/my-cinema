@@ -163,4 +163,11 @@ class MovieRepository
         $stmt->execute([':id' => (int) $id]);
         return $stmt->rowCount() > 0;
     }
+    public function hasScreenings($id)
+    {
+        $stmt = $this->pdo->prepare("SELECT COUNT(*) as count FROM screenings WHERE movie_id = :movie_id");
+        $stmt->execute([':movie_id' => (int) $id]);
+        $result = $stmt->fetch(PDO::FETCH_ASSOC);
+        return $result['count'] > 0;
+    }
 }

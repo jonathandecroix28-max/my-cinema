@@ -4,18 +4,49 @@
  * Utilise les variables d'environnement depuis .env
  */
 
-// Charger le fichier .env (à la racine du projet)
-date_default_timezone_set('Europe/Paris'); // Assurez-vous que le fuseau horaire est défini pour éviter les warnings liés à la date
+date_default_timezone_set('Europe/Paris');
 $envFile = __DIR__ . '/../../.env';
 
 if (!file_exists($envFile)) {
     http_response_code(500);
     exit(json_encode([
-        'error' => 'Fichier .env introuvable. Copiez .env.example vers .env et configurez-le.'
+        'error' => 'Fichier .env introuvable.'
     ]));
 }
 
-$env = parse_ini_file($envFile);
+// PARSING MANUEL DU .ENV
+function loadEnvFile($filePath)
+{
+    $variables = [];
+    $lines = file($filePath, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+
+    foreach ($lines as $line) {
+        $line = trim($line);
+        if (empty($line) || strpos($line, '#') === 0) {
+            continue;
+        }
+
+        if (strpos($line, '=') !== false) {
+            [$key, $value] = explode('=', $line, 2);
+            $key = trim($key);
+            $value = trim($value);
+
+            if (
+                (substr($value, 0, 1) === '"' && substr($value, -1) === '"') ||
+                (substr($value, 0, 1) === "'" && substr($value, -1) === "'")
+            ) {
+                $value = substr($value, 1, -1);
+            }
+
+            $variables[$key] = $value;
+        }
+    }
+
+    return $variables;
+}
+
+// Charger les variables
+$env = loadEnvFile($envFile);
 
 // Configuration PDO
 $dsn = sprintf(
@@ -34,17 +65,20 @@ try {
         PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
         PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
         PDO::ATTR_EMULATE_PREPARES => false,
-
-
     ]);
 
     $pdo->exec("SET time_zone = '+01:00'");
 } catch (PDOException $e) {
-    // Logger l'erreur (ne pas exposer les détails en production)
     error_log("Database connection error: " . $e->getMessage());
 
+    // ✅ AFFICHER L'ERREUR DÉTAILLÉE (temporaire pour debug)
     http_response_code(500);
-    exit(json_encode([
-        'error' => 'Erreur de connexion à la base de données'
-    ]));
+    exit(`<div style='background: #f8d7da; padding: 20px; color: #721c24; font-family: monospace;'>` .
+        "<h3>❌ Erreur de connexion à la base de données</h3>" .
+        "<strong>Message :</strong> " . htmlspecialchars($e->getMessage()) . "<br>" .
+        "<strong>Code :</strong> " . htmlspecialchars($e->getCode()) . "<br>" .
+        "<strong>DSN :</strong> " . htmlspecialchars($dsn) . "<br>" .
+        "<strong>User :</strong> " . htmlspecialchars($user) . "<br>" .
+        "<strong>Pass length :</strong> " . strlen($pass) . " caractères<br>" .
+        "</div>");
 }
