@@ -69,16 +69,15 @@ try {
 
     $pdo->exec("SET time_zone = '+01:00'");
 } catch (PDOException $e) {
+    // Log l'erreur complète dans les logs (invisible pour l'utilisateur)
     error_log("Database connection error: " . $e->getMessage());
+    error_log("DSN: " . $dsn);
+    error_log("User: " . $user);
 
-    // ✅ AFFICHER L'ERREUR DÉTAILLÉE (temporaire pour debug)
+    // Retourner un message générique à l'utilisateur
     http_response_code(500);
-    exit(`<div style='background: #f8d7da; padding: 20px; color: #721c24; font-family: monospace;'>` .
-        "<h3>❌ Erreur de connexion à la base de données</h3>" .
-        "<strong>Message :</strong> " . htmlspecialchars($e->getMessage()) . "<br>" .
-        "<strong>Code :</strong> " . htmlspecialchars($e->getCode()) . "<br>" .
-        "<strong>DSN :</strong> " . htmlspecialchars($dsn) . "<br>" .
-        "<strong>User :</strong> " . htmlspecialchars($user) . "<br>" .
-        "<strong>Pass length :</strong> " . strlen($pass) . " caractères<br>" .
-        "</div>");
+    header('Content-Type: application/json');
+    exit(json_encode([
+        'error' => 'Service temporairement indisponible. Veuillez réessayer ultérieurement.'
+    ]));
 }

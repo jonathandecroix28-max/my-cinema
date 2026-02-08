@@ -1,22 +1,44 @@
 <?php
 
 // ✅ Désactiver l'affichage des erreurs en production
-ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
-error_reporting(E_ALL);
-
-// Activer uniquement en développement
 if (getenv('APP_ENV') === 'development') {
     ini_set('display_errors', 1);
     ini_set('display_startup_errors', 1);
+    error_reporting(E_ALL);
+} else {
+    ini_set('display_errors', 0);
+    ini_set('display_startup_errors', 0);
+    error_reporting(0);
 }
 ini_set('error_log', __DIR__ . '/logs/php_errors.log');
 
 session_start();
 header('Content-Type: application/json');
-header('Access-Control-Allow-Origin: *'); // ✅ CORS pour le frontend
+
+// ✅ Liste blanche des origines autorisées
+$allowedOrigins = [
+    'http://localhost',
+    'http://localhost:3000',
+    'http://127.0.0.1',
+    'http://localhost:8080'
+];
+
+$origin = $_SERVER['HTTP_ORIGIN'] ?? '';
+
+if (in_array($origin, $allowedOrigins)) {
+    header("Access-Control-Allow-Origin: $origin");
+    header('Access-Control-Allow-Credentials: true');
+}
+
 header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
-header('Access-Control-Allow-Headers: Content-Type');
+header('Access-Control-Allow-Headers: Content-Type, Authorization, X-API-Key');
+
+// ✅ Headers de sécurité
+header('X-Frame-Options: DENY');
+header('X-Content-Type-Options: nosniff');
+header('X-XSS-Protection: 1; mode=block');
+header('Referrer-Policy: strict-origin-when-cross-origin');
+header('Permissions-Policy: geolocation=(), microphone=(), camera=()');
 
 // Gérer les requêtes OPTIONS (preflight CORS)
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
@@ -29,9 +51,10 @@ require_once __DIR__ . '/autoload.php';
 
 $request = $_GET['action'] ?? '';
 
-
-
-
+// ✅ PROTECTION : Vérifier authentification pour actions sensibles
+if (AuthMiddleware::requiresAuth($request)) {
+    AuthMiddleware::checkAuth();
+}
 
 switch ($request) {
     case '': // action par défaut
@@ -113,4 +136,3 @@ switch ($request) {
         echo json_encode(["error" => "Action non trouvée"]);
         break;
 }
-

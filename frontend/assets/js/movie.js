@@ -14,6 +14,7 @@ import {
     apiList
 } from './config.js';
 
+import { initAuth, requireAdmin, updateAuthUI } from './auth-ui.js';
 import { els } from './dom-elements.js';
 
 import {
@@ -217,16 +218,16 @@ const createMovieRow = (movie) => {
         <td class="movie-director d-none d-lg-table-cell">${movie.director || 'N/A'}</td>
         <td class="text-center movie-year d-none d-md-table-cell">${movie.release_year}</td>
         <td class="text-center actions">
-            <button class="btn btn-sm btn-info view-more-btn" data-id="${movie.id}" title="Voir plus">
-                <i class="bi bi-eye"></i>
-            </button>
-            <button class="btn btn-sm btn-warning edit-row-btn" data-id="${movie.id}" title="Modifier">
-                <i class="bi bi-pencil"></i>
-            </button>
-            <button class="btn btn-sm btn-danger delete-row-btn" data-id="${movie.id}" title="Supprimer">
-                <i class="bi bi-trash"></i>
-            </button>
-        </td>
+    <button class="btn btn-sm btn-info view-more-btn" data-id="${movie.id}" title="Voir plus">
+        <i class="bi bi-eye"></i>
+    </button>
+    <button class="btn btn-sm btn-warning edit-row-btn admin-only" data-id="${movie.id}" title="Modifier">
+        <i class="bi bi-pencil"></i>
+    </button>
+    <button class="btn btn-sm btn-danger delete-row-btn admin-only" data-id="${movie.id}" title="Supprimer">
+        <i class="bi bi-trash"></i>
+    </button>
+</td>
     `;
     return tr;
 };
@@ -265,6 +266,7 @@ const renderMovies = () => {
 
     // Mettre à jour la pagination
     updatePaginationUI();
+    updateAuthUI();
 };
 
 /**
@@ -694,12 +696,14 @@ if (movieTableBody) {
 
         // Bouton Modifier
         if (e.target.closest('.edit-row-btn')) {
+            if (!requireAdmin()) return;
             enableEditMode(row);
             return;
         }
 
         // Bouton Sauvegarder
         if (e.target.closest('.save-row-btn')) {
+            if (!requireAdmin()) return;
             await saveMovie(row);
             return;
         }
@@ -712,6 +716,7 @@ if (movieTableBody) {
 
         // Bouton Supprimer
         if (e.target.closest('.delete-row-btn')) {
+            if (!requireAdmin()) return;
             const movieId = parseInt(e.target.closest('.delete-row-btn').dataset.id, 10);
             const movie = movies.find(m => m.id === movieId);
 
@@ -836,7 +841,7 @@ if (titleInput) {
 if (formMovie) {
     formMovie.addEventListener('submit', async (e) => {
         e.preventDefault();
-
+        if (!requireAdmin()) return;
         // Récupérer les valeurs
         const movieData = {
             title: document.getElementById('movieTitle')?.value.trim() || '',
@@ -934,7 +939,7 @@ if (titleDataList && moviesDatabase) {
 }
 
 
-// 🚀 REMPLIR LE SELECT
+// REMPLIR LE SELECT
 
 
 /**
@@ -966,22 +971,28 @@ const init = async () => {
     try {
         console.log('🎬 Initialisation de movie.js...');
 
-        // ✅ Charger les films (UNE SEULE FOIS)
+        //  Initialiser l'auth (affiche le badge, masque les éléments admin)
+        initAuth();
+
+        // Charger les films
         movies = await apiFetch('list_movies');
         state.filteredMovies = movies;
 
         console.log('✅ Films chargés:', movies.length);
 
-        // Configurer les filtres dynamiques
+        // Configurer les filtres
         setupDynamicFilters(movies);
 
         // Remplir le select
         fillMovieSelect(movies);
 
-        // Afficher les films
+        // Afficher les films (crée les boutons .admin-only)
         renderMovies();
 
-        // Mettre à jour les compteurs
+        //RE-APPLIQUER l'affichage admin sur les nouveaux boutons
+        updateAuthUI();
+
+        //  Mettre à jour les compteurs
         if (stockMovie) {
             stockMovie.textContent = `Film${movies.length > 1 ? 's' : ''} en stock: ${movies.length} 🎬`;
         }
@@ -1000,7 +1011,6 @@ const init = async () => {
         alert('❌ Erreur lors du chargement des films. Veuillez recharger la page.');
     }
 };
-
 
 //  DÉMARRER L'APPLICATION
 

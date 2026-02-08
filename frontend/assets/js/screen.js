@@ -6,6 +6,7 @@
 import { apiFetch, getCurrentDateTimeLocal, formatDate, apiDelete, apiPost, apiPut, sqlToDateTimeLocal } from './config.js';
 import { els } from './dom-elements.js';
 import { getPaginatedItems, getPageInfo, isFirstPage, isLastPage, disableButton, enableButton, ITEMS_PER_PAGE } from './pagination.js';
+import { initAuth, requireAdmin, updateAuthUI } from './auth-ui.js';
 
 const { listScreenings, movieSelect, roomSelect, screeningForm, stockScreening } = els;
 
@@ -39,6 +40,9 @@ const loadData = async () => {
 
 //  Chargement initial
 await loadData();
+
+initAuth();
+console.log('✅ Auth initialisée dans screen.js');
 
 
 // ÉLÉMENTS DOM
@@ -142,13 +146,13 @@ const createScreeningRow = (screening) => {
         <td class="screening-room-id">${displayRoom(screening.room_id)}</td>
         <td class="text-center screening-startime">${formatDate(screening.start_time)}</td>
         <td class="text-center actions">
-            <button class="btn btn-sm btn-warning edit-row-btn" data-id="${screening.id}" title="Modifier">
+            <button class="btn btn-sm btn-warning edit-row-btn admin-only" data-id="${screening.id}" title="Modifier">
                 <i class="bi bi-pencil"></i>
             </button>
             <button class="btn btn-sm btn-info view-more-btn" data-id="${screening.id}" title="Détails">
                 <i class="bi bi-eye"></i>
             </button>
-            <button class="btn btn-sm btn-danger delete-row-btn" data-id="${screening.id}" title="Supprimer">
+            <button class="btn btn-sm btn-danger delete-row-btn admin-only" data-id="${screening.id}" title="Supprimer">
                 <i class="bi bi-trash"></i>
             </button>
         </td>
@@ -175,6 +179,7 @@ const renderScreenings = () => {
 
     updatePaginationUI();
     updateStockCounter();
+    updateAuthUI();
 };
 
 
@@ -234,6 +239,7 @@ const cancelAllEdits = () => {
 };
 
 const enableEditMode = (row) => {
+    if (!requireAdmin()) return;
     cancelAllEdits(); // Annuler les autres éditions en cours
     const screeningId = row.dataset.id;
     const screening = screenings.find(s => s.id == screeningId);
@@ -282,6 +288,7 @@ const enableEditMode = (row) => {
 // FONCTION POUR SAUVEGARDER
 
 const saveScreening = async (row) => {
+    if (!requireAdmin()) return;
     const screeningId = row.dataset.id;
     const screeningData = {
         movie_id: parseInt(row.querySelector('.inline-select[data-field="movie_id"]').value, 10),
@@ -327,6 +334,7 @@ const cancelEdit = () => {
 // FONCTION DE SUPPRESSION
 
 const executeDelete = async (type, id) => {
+    if (!requireAdmin()) return;
     try {
         const data = await apiDelete(type, id);
 
@@ -485,6 +493,7 @@ if (screeningTableBody) {
 if (screeningForm) {
     screeningForm.addEventListener('submit', async (e) => {
         e.preventDefault();
+        if (!requireAdmin()) return;
 
         const data = {
             movie_id: parseInt(document.getElementById('movieSelect').value, 10),

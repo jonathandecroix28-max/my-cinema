@@ -1156,3 +1156,63 @@ input[type="number"] {
         overflow: visible !important;
     }
 }
+
+/* ✅ Styles pour l'authentification */
+#user-badge {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 10px;
+}
+
+.badge {
+    padding: 8px 15px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: bold;
+}
+
+.badge-admin {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.badge-user {
+    background: #f0f0f0;
+    color: #666;
+}
+
+.btn-logout,
+.btn-login {
+    padding: 8px 15px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    text-decoration: none;
+    font-size: 14px;
+    transition: all 0.3s;
+}
+
+.btn-logout {
+    background: #ff6b6b;
+    color: white;
+}
+
+.btn-logout:hover {
+    background: #ee5a5a;
+}
+
+.btn-login {
+    background: #667eea;
+    color: white;
+    display: inline-block;
+}
+
+.btn-login:hover {
+    background: #764ba2;
+}
+
+/* Masquer les éléments admin par défaut */
+.admin-only {
+    display: none;
+}

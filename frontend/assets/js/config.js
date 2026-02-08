@@ -1,17 +1,76 @@
 //mon url de base pour les appels API
 export const API_BASE_URL = '/my-cinema/backend/index.php';
 
-// utils.js ou config.js (où se trouvent tes autres exports)
-// Assure-toi d'importer le dictionnaire
+// ✅ AJOUTEZ CES LIGNES ICI (NOUVEAU)
+// ==========================================
+const API_KEY = 'cinema_admin_2026_secret_key_xyz';
 
+const PUBLIC_ACTIONS = [
+    'list_movies', 'get_movie',
+    'list_rooms', 'get_room',
+    'list_screenings'
+];
 
-// appel simplémentés fréquemment, pour éviter de répéter le code
+let currentUser = {
+    role: 'user',
+    isAdmin: false,
+    apiKey: null
+};
 
-// 1. Fonction d'appel API générique
+export const loginAsAdmin = (password) => {
+    if (password === 'admin123') {
+        currentUser = {
+            role: 'admin',
+            isAdmin: true,
+            apiKey: API_KEY
+        };
+        localStorage.setItem('userRole', 'admin');
+        return true;
+    }
+    return false;
+};
+
+export const logout = () => {
+    currentUser = { role: 'user', isAdmin: false, apiKey: null };
+    localStorage.removeItem('userRole');
+};
+
+export const isAdmin = () => currentUser.isAdmin;
+
+export const getCurrentRole = () => currentUser.role;
+
+export const initSession = () => {
+    const savedRole = localStorage.getItem('userRole');
+    if (savedRole === 'admin') {
+        currentUser = {
+            role: 'admin',
+            isAdmin: true,
+            apiKey: API_KEY
+        };
+    }
+};
+
+export const getUserInfo = () => ({
+    role: currentUser.role,
+    isAdmin: currentUser.isAdmin
+});
+
+// ✅ MODIFIÉ : Fonction d'appel API générique avec authentification automatique
+// ✅ REMPLACEZ votre apiFetch actuel par celui-ci
 export const apiFetch = async (action, options = {}) => {
     const queryString = new URLSearchParams(options.query || {}).toString();
     const url = `${API_BASE_URL}?action=${action}${queryString ? `&${queryString}` : ''}`;
-    const response = await fetch(url, options);
+
+    // ✅ AJOUTEZ CES 4 LIGNES
+    const headers = options.headers || {};
+    if (!PUBLIC_ACTIONS.includes(action) && currentUser.apiKey) {
+        headers['X-API-Key'] = currentUser.apiKey;
+    }
+
+    const response = await fetch(url, {
+        ...options,
+        headers  // ✅ UTILISEZ headers au lieu de options.headers
+    });
 
     if (!response.ok) {
         const error = await response.json();
@@ -45,6 +104,13 @@ export const apiPost = async (action, data) => {
     });
 };
 
+export const apiPermanentDelete = async (type, id) => {
+    return await apiFetch(`permanent_delete_${type}`, {
+        method: 'DELETE',
+        query: { id }  // ✅ Séparé proprement
+    });
+};
+
 // 4. Fonction de suppression générique
 export const apiDelete = async (type, id) => {
     return await apiFetch(`delete_${type}`, {
@@ -62,9 +128,16 @@ export const apiRestore = async (type, id) => {
 
 export const apiPut = async (type, id, data) => {
     const url = `${API_BASE_URL}?action=update_${type}&id=${id}`;
+
+    // ✅ MODIFIEZ headers
+    const headers = { 'Content-Type': 'application/json' };
+    if (currentUser.apiKey) {
+        headers['X-API-Key'] = currentUser.apiKey;
+    }
+
     const response = await fetch(url, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: headers,  // ✅ Utilisez la variable
         body: JSON.stringify(data)
     });
     return response.json();
@@ -98,6 +171,3 @@ export const sqlToDateTimeLocal = (sqlDateTime) => {
     const [h, m] = time.split(':');
     return `${date}T${h}:${m}`;
 };
-
-
-

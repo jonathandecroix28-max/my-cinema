@@ -2,7 +2,7 @@
 // ROOM-TRASH.JS - GESTION DE LA CORBEILLE
 
 
-import { apiFetch, apiRestore } from './config.js';
+import { apiFetch, apiPermanentDelete, apiRestore } from './config.js';
 
 const trashTableBody = document.getElementById('trashTableBody');
 const trashStats = document.getElementById('trashStats');
@@ -166,8 +166,10 @@ const restoreRoom = async (id) => {
 
 // 🗑️ SUPPRIMER DÉFINITIVEMENT
 
+// 🗑️ SUPPRIMER DÉFINITIVEMENT
+
 const permanentDelete = async (id) => {
-    console.log('🗑️ Suppression définitive de la salle ID:', id);
+    console.log('����️ Suppression définitive de la salle ID:', id);
 
     const room = deletedRooms.find(r => r.id == id);
     if (!room) {
@@ -180,8 +182,8 @@ const permanentDelete = async (id) => {
     }
 
     try {
-        const response = await fetch(`../backend/index.php?action=permanent_delete_room&id=${id}`);
-        const result = await response.json();
+        // ✅ CORRECTION : Pas besoin de .json()
+        const result = await apiPermanentDelete('room', id);
 
         console.log('📦 Résultat suppression:', result);
 

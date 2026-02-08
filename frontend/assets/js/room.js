@@ -1,18 +1,19 @@
-// ==========================================
+
 // ROOM.JS - VERSION DYNAMIQUE COMPLÈTE
-// ==========================================
+
 
 // ✅ Imports
 import { els } from './dom-elements.js';
 import { apiFetch, apiDelete, apiPost, apiPut } from './config.js';
 import { getPaginatedItems, getPageInfo, isFirstPage, isLastPage, disableButton, enableButton, ITEMS_PER_PAGE } from './pagination.js';
 import { roomsDatabase } from './room-data.js';
+import { initAuth, requireAdmin, updateAuthUI } from './auth-ui.js';
 
 const { roomSelect, formRoom, listScreenings, stockRoom } = els;
 
-// ==========================================
-// 🌐 VARIABLES GLOBALES
-// ==========================================
+
+// VARIABLES GLOBALES
+
 let rooms = []; // ✅ Changé en let pour pouvoir modifier
 
 // État de la pagination
@@ -21,9 +22,9 @@ let state = {
     itemsPerPage: ITEMS_PER_PAGE
 };
 
-// ==========================================
-// 🔄 FONCTION DE CHARGEMENT DES DONNÉES
-// ==========================================
+
+// FONCTION DE CHARGEMENT DES DONNÉES
+
 const loadRooms = async () => {
     try {
         rooms = await apiFetch('list_rooms');
@@ -37,16 +38,18 @@ const loadRooms = async () => {
 // ✅ Chargement initial
 await loadRooms();
 
-// ==========================================
+initAuth();
+console.log('✅ Auth initialisée dans room.js');
+
 // 🎯 ÉLÉMENTS DOM
-// ==========================================
+
 const btnPrevRoom = document.getElementById('btnPrevRoom');
 const btnNextRoom = document.getElementById('btnNextRoom');
 const pageInfoRoom = document.getElementById('pageInfoRoom');
 
-// ==========================================
+
 // 📊 CRÉATION DU TABLEAU
-// ==========================================
+
 const roomTable = document.createElement('table');
 roomTable.className = 'table table-bordered table-striped mt-4 table-hover';
 roomTable.innerHTML = `
@@ -69,9 +72,9 @@ if (listScreenings) {
 
 const roomTableBody = document.getElementById('roomTableBody');
 
-// ==========================================
+
 // 🎨 FONCTION POUR CRÉER UNE LIGNE
-// ==========================================
+
 const createRoomRow = (room) => {
     const tr = document.createElement('tr');
     tr.dataset.id = room.id;
@@ -91,13 +94,13 @@ const createRoomRow = (room) => {
         </td>
         <td class="text-center actions">
            
-            <button class="btn btn-sm btn-warning edit-row-btn" data-id="${room.id}" title="Modifier">
+            <button class="btn btn-sm btn-warning edit-row-btn admin-only" data-id="${room.id}" title="Modifier">
                 <i class="bi bi-pencil"></i>
             </button>
             <button class="btn btn-sm btn-info view-more-btn" data-id="${room.id}" title="Détails">
                 <i class="bi bi-eye"></i>
             </button> 
-            <button class="btn btn-sm btn-secondary delete-row-btn" data-id="${room.id}" title="Mettre dans la corbeille">
+            <button class="btn btn-sm btn-secondary delete-row-btn admin-only" data-id="${room.id}" title="Mettre dans la corbeille">
                 <i class="bi bi-trash"></i>
             </button>
         </td>
@@ -105,9 +108,9 @@ const createRoomRow = (room) => {
     return tr;
 };
 
-// ==========================================
+
 // 🖼️ FONCTION POUR AFFICHER LES SALLES
-// ==========================================
+
 const renderRooms = () => {
     if (!roomTableBody) return;
 
@@ -125,20 +128,21 @@ const renderRooms = () => {
     updatePaginationUI();
     updateStockCounter();
     updateRoomSelect();
+    updateAuthUI();
 };
 
-// ==========================================
+
 // 🔄 MISE À JOUR DU COMPTEUR
-// ==========================================
+
 const updateStockCounter = () => {
     if (stockRoom) {
         stockRoom.textContent = `Salle${rooms.length > 1 ? 's' : ''} en stock: ${rooms.length} 🏟️`;
     }
 };
 
-// ==========================================
+
 // 🔄 MISE À JOUR DU SELECT
-// ==========================================
+
 const updateRoomSelect = () => {
     if (roomSelect) {
         roomSelect.innerHTML = '<option value="">Choisissez une salle...</option>';
@@ -153,9 +157,9 @@ const updateRoomSelect = () => {
     }
 };
 
-// ==========================================
+
 // 📄 MISE À JOUR DE L'UI DE PAGINATION
-// ==========================================
+
 const updatePaginationUI = () => {
     if (pageInfoRoom) {
         pageInfoRoom.textContent = getPageInfo(state.currentPage, rooms.length, state.itemsPerPage);
@@ -174,9 +178,9 @@ const updatePaginationUI = () => {
     }
 };
 
-// ==========================================
+
 // 📄 GESTIONNAIRES DE PAGINATION
-// ==========================================
+
 if (btnPrevRoom) {
     btnPrevRoom.addEventListener('click', () => {
         if (state.currentPage > 1) {
@@ -198,9 +202,9 @@ if (btnNextRoom) {
     });
 }
 
-// ==========================================
+
 // �� AUTO-REMPLISSAGE DU FORMULAIRE
-// ==========================================
+
 const autoFillForm = (selectedRoom) => {
     let room = roomsDatabase.find(r => r.name.toLowerCase() === selectedRoom.toLowerCase());
     if (!room) {
@@ -230,13 +234,13 @@ const autoFillForm = (selectedRoom) => {
     }
 };
 
-// ==========================================
-// ✏️ FONCTION POUR ACTIVER LE MODE ÉDITION
-// ==========================================
 
-// ==========================================
+// ✏️ FONCTION POUR ACTIVER LE MODE ÉDITION
+
+
+
 // 🔒 DÉSACTIVER TOUTES LES ÉDITIONS EN COURS
-// ==========================================
+
 
 /**
  * Annule toutes les éditions en cours et réaffiche le tableau
@@ -250,6 +254,7 @@ const cancelAllEdits = () => {
 };
 
 const enableEditMode = async (row) => {
+    if (!requireAdmin()) return;
     cancelAllEdits(); // Annuler les autres éditions en cours
     const roomId = row.dataset.id;
     const room = rooms.find(r => r.id == roomId);
@@ -303,10 +308,11 @@ const enableEditMode = async (row) => {
     `;
 };
 
-// ==========================================
+
 // 💾 FONCTION POUR SAUVEGARDER LES MODIFICATIONS
-// ==========================================
+
 const saveRoom = async (row) => {
+    if (!requireAdmin()) return;
     const roomId = row.dataset.id;
 
     const roomData = {
@@ -348,17 +354,18 @@ const saveRoom = async (row) => {
     }
 };
 
-// ==========================================
+
 // ❌ FONCTION POUR ANNULER L'ÉDITION
-// ==========================================
+
 const cancelEdit = () => {
     renderRooms();
 };
 
-// ==========================================
+
 // 🗑️ FONCTION DE SUPPRESSION
-// ==========================================
+
 const executeDelete = async (type, id) => {
+    if (!requireAdmin()) return;
     try {
         const result = await apiDelete(type, id);
 
@@ -382,9 +389,9 @@ const executeDelete = async (type, id) => {
     }
 };
 
-// ==========================================
+
 // 👁️ FONCTION POUR AFFICHER LES DÉTAILS
-// ==========================================
+
 const showRoomDetails = (roomId) => {
     const room = rooms.find(r => r.id == roomId);
     if (!room) return;
@@ -464,9 +471,9 @@ const showRoomDetails = (roomId) => {
     });
 };
 
-// ==========================================
+
 // 🖱️ GESTIONNAIRE D'ÉVÉNEMENTS PRINCIPAL
-// ==========================================
+
 if (roomTableBody) {
     roomTableBody.addEventListener('click', async (e) => {
         const row = e.target.closest('tr');
@@ -510,13 +517,13 @@ if (roomTableBody) {
     });
 }
 
-// ==========================================
+
 // 📝 FORMULAIRE D'AJOUT (DYNAMIQUE)
-// ==========================================
+
 if (formRoom) {
     formRoom.addEventListener('submit', async (e) => {
         e.preventDefault();
-
+        if (!requireAdmin()) return;
         const data = {
             name: document.getElementById('nameRoom').value,
             capacity: parseInt(document.getElementById('capacity').value, 10),
@@ -556,9 +563,9 @@ if (formRoom) {
     });
 }
 
-// ==========================================
+
 // 🤖 ÉVÉNEMENTS AUTO-COMPLÉTION
-// ==========================================
+
 const nameInput = document.getElementById('nameRoom');
 if (nameInput) {
     nameInput.addEventListener('input', (e) => {
@@ -576,9 +583,9 @@ if (nameInput) {
     });
 }
 
-// ==========================================
+
 // 📋 DATALIST POUR AUTO-COMPLÉTION
-// ==========================================
+
 const roomDataList = document.getElementById('listRoom');
 if (roomDataList && roomsDatabase) {
     roomsDatabase.forEach(room => {
@@ -588,9 +595,9 @@ if (roomDataList && roomsDatabase) {
     });
 }
 
-// ==========================================
+
 // 🎬 AFFICHAGE INITIAL
-// ==========================================
+
 renderRooms();
 
 console.log('✅ room.js chargé avec succès', {
