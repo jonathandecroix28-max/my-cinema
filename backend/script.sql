@@ -25,6 +25,8 @@ CREATE TABLE IF NOT EXISTS rooms (
     active BOOLEAN NOT NULL DEFAULT TRUE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    deleted_at DATETIME NULL DEFAULT NULL
+ -- ✅ Soft delete
 );
 
 -- Table screenings (déjà existante)
@@ -37,43 +39,4 @@ CREATE TABLE IF NOT EXISTS screenings (
     FOREIGN KEY (movie_id) REFERENCES movies(id) ON DELETE CASCADE,
     FOREIGN KEY (room_id) REFERENCES rooms(id) ON DELETE CASCADE
 );
-
-/*ALTER TABLE rooms ADD COLUMN deleted_at DATETIME DEFAULT NULL;
-ALTER TABLE movies ADD COLUMN deleted_at DATETIME DEFAULT NULL;
-ALTER TABLE screenings ADD COLUMN deleted_at DATETIME DEFAULT NULL;*/
-
--- On s'assure que toutes les lignes existantes ont bien NULL
-UPDATE movies SET deleted_at = NULL;
-
--- On s'assure que la colonne accepte le NULL par défaut
-ALTER TABLE movies MODIFY deleted_at DATETIME DEFAULT NULL;
--- On s'assure que toutes les lignes existantes ont bien NULL
-UPDATE rooms SET deleted_at = NULL;
-
--- On s'assure que la colonne accepte le NULL par défaut
-ALTER TABLE rooms MODIFY deleted_at DATETIME DEFAULT NULL;
-
-
-/*
-UPDATE screenings 
-SET room_id = 1 
-WHERE room_id NOT IN (SELECT id FROM rooms);
-
--- 1. Fix the Parent Tables first
-ALTER TABLE movies MODIFY id INT UNSIGNED AUTO_INCREMENT;
-ALTER TABLE rooms MODIFY id INT UNSIGNED AUTO_INCREMENT;
-
--- 2. Ensure the Screening columns match the parent type exactly
-ALTER TABLE screenings 
-    MODIFY movie_id INT UNSIGNED NOT NULL,
-    MODIFY room_id INT UNSIGNED NOT NULL;
-
--- 3. Now apply the Foreign Key constraints
-ALTER TABLE screenings
-ADD CONSTRAINT fk_screenings_movie
-    FOREIGN KEY (movie_id) REFERENCES movies(id)
-    ON DELETE CASCADE,
-ADD CONSTRAINT fk_screenings_room
-    FOREIGN KEY (room_id) REFERENCES rooms(id)
-    ON DELETE CASCADE;*/
 

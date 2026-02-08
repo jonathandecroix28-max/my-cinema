@@ -153,9 +153,9 @@
         <h2>🔍 Diagnostic COMPLET de connexion MySQL</h2>
 
         <?php
-        // ========================================
-// 1️⃣ CHARGEMENT DU .ENV
-// ========================================
+
+        // 1️CHARGEMENT DU .ENV
+        
         $envFile = __DIR__ . '/../.env';
 
         if (!file_exists($envFile)) {
@@ -200,9 +200,9 @@
 
         $env = loadEnvFile($envFile);
 
-        // ========================================
-// 2️⃣ AFFICHAGE DES VARIABLES
-// ========================================
+
+        // 2️AFFICHAGE DES VARIABLES
+        
         echo '<h3>📋 Variables du .env :</h3>';
         echo '<table>';
         echo '<tr><th>Variable</th><th>Valeur</th><th>Longueur</th></tr>';
@@ -216,9 +216,9 @@
 
         echo '<hr>';
 
-        // ========================================
-// 3️⃣ CONSTRUCTION DU DSN
-// ========================================
+
+        // 3️CONSTRUCTION DU DSN
+        
         $dsn = sprintf(
             "mysql:host=%s;port=%s;dbname=%s;charset=%s",
             $env['DB_HOST'] ?? 'localhost',
@@ -234,9 +234,9 @@
 
         echo '<hr>';
 
-        // ========================================
-// 4️⃣ TEST DE CONNEXION
-// ========================================
+
+        // 4️TEST DE CONNEXION
+        
         echo '<h3>🔌 Test de connexion MySQL :</h3>';
 
         try {
@@ -256,9 +256,9 @@
             echo '<p>🔧 <strong>Version MySQL :</strong> ' . htmlspecialchars($info['version']) . '</p>';
             echo '</div>';
 
-            // ========================================
+
             // 5️⃣ AFFICHER LES PRIVILÈGES
-            // ========================================
+        
             echo '<h3>🔐 Privilèges de l\'utilisateur :</h3>';
 
             try {
@@ -274,9 +274,9 @@
                 echo '<div class="warning">⚠️ Impossible d\'afficher les privilèges : ' . htmlspecialchars($e->getMessage()) . '</div>';
             }
 
-            // ========================================
+
             // 6️⃣ TESTER UNE REQUÊTE
-            // ========================================
+        
             echo '<hr><h3>🧪 Test d\'une requête (SHOW TABLES) :</h3>';
 
             try {
