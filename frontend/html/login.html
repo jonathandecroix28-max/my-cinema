@@ -159,7 +159,7 @@
     </div>
     <!-- script directement dans le html pour l'authentification -->
     <script type="module">
-        import { loginAsAdmin, initSession } from './frontend/assets/js/config.js';
+        import { loginAsAdmin, initSession } from '../assets/js/config.js';
         // Fonction pour basculer entre les rôles
         window.selectRole = (role) => {
             document.querySelectorAll('.role-btn').forEach(b => b.classList.remove('active'));
@@ -169,7 +169,7 @@
         };
 
         // Fonction pour entrer en tant que visiteur
-        window.enterAsUser = () => window.location.href = 'frontend/html/index.html';
+        window.enterAsUser = () => window.location.href = 'index.html';
         // Fonction de gestion du formulaire de connexion admin
         window.handleLogin = (e) => {
             e.preventDefault();

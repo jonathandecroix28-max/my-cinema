@@ -51,7 +51,7 @@ function updateUserBadge(userInfo) {
             <span style="padding: 8px 15px; background: #f0f0f0; color: #666; border-radius: 20px; font-weight: bold;">
                 👤 Visiteur
             </span>
-            <a href="../../login.html" style="padding: 8px 15px; background: #667eea; color: white; border-radius: 8px; text-decoration: none; font-weight: bold;">
+             <a href="login.html" style="padding: 8px 15px; background: #667eea; color: white; border-radius: 8px; text-decoration: none; font-weight: bold;">
                 Connexion
             </a>
         `;
@@ -82,7 +82,8 @@ function toggleAdminElements(isAdmin) {
 window.handleLogout = () => {
     if (confirm('Se déconnecter ?')) {
         logout();
-        window.location.href = '../../login.html';
+        window.location.href = 'login.html';
+
     }
 };
 
