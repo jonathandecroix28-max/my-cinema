@@ -4,9 +4,9 @@ services:
     name: my-cinema-api
     env: php
     plan: free
+    rootDirectory: backend 
     buildCommand: composer install
-    # On pointe directement sur le dossier public
-    startCommand: apache2-foreground 
+    startCommand: php -S 0.0.0.0:$PORT index.php  
     envVars:
       - key: DATABASE_URL
         fromDatabase:
@@ -21,7 +21,7 @@ services:
     buildCommand: npm install && npm run build
     startCommand: npm start
     envVars:
-      - key: REACT_APP_API_URL # Exemple pour lier au back
+      - key: REACT_APP_API_URL 
         value: https://my-cinema-api.onrender.com
 
 # --- BASE DE DONNÉES (PostgreSQL par défaut sur Render) ---
