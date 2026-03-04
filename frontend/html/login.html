@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Connexion - My Cinema</title>
     <style>
+        /* style de base pour la page de connexion */
         * {
             margin: 0;
             padding: 0;
@@ -156,10 +157,10 @@
             </form>
         </div>
     </div>
-
+    <!-- script directement dans le html pour l'authentification -->
     <script type="module">
         import { loginAsAdmin, initSession } from './frontend/assets/js/config.js';
-
+        // Fonction pour basculer entre les rôles
         window.selectRole = (role) => {
             document.querySelectorAll('.role-btn').forEach(b => b.classList.remove('active'));
             document.querySelectorAll('.content').forEach(c => c.classList.remove('active'));
@@ -167,8 +168,9 @@
             document.getElementById(`${role}-content`).classList.add('active');
         };
 
+        // Fonction pour entrer en tant que visiteur
         window.enterAsUser = () => window.location.href = 'frontend/html/index.html';
-
+        // Fonction de gestion du formulaire de connexion admin
         window.handleLogin = (e) => {
             e.preventDefault();
             const pwd = document.getElementById('password').value;
@@ -181,7 +183,7 @@
             }
             return false;
         };
-
+        // Initialisation de la session pour vérifier si l'utilisateur est déjà connecté
         initSession();
     </script>
 </body>
