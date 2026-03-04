@@ -20,17 +20,22 @@ if (file_exists($envFile)) {
 $renderDbUrl = getenv('DATABASE_URL');
 
 try {
+    $renderDbUrl = getenv('DATABASE_URL');
+
     if ($renderDbUrl) {
         // --- CONFIGURATION RENDER (PostgreSQL) ---
         $dbopts = parse_url($renderDbUrl);
-        $dsn = sprintf(
-            "pgsql:host=%s;port=%s;dbname=%s",
-            $dbopts["host"],
-            $dbopts["port"],
-            ltrim($dbopts["path"], '/')
-        );
+
+        // On extrait proprement chaque composant
+        $host = $dbopts["host"];
+        $port = $dbopts["port"] ?? 5432; // Par défaut 5432 pour Postgres
         $user = $dbopts["user"];
         $pass = $dbopts["pass"];
+        $dbname = ltrim($dbopts["path"], '/');
+
+        // Construction du DSN SANS espaces inutiles et avec les bons séparateurs
+        $dsn = "pgsql:host=$host;port=$port;dbname=$dbname";
+
     } else {
         // --- CONFIGURATION LOCAL (MySQL) ---
         $dsn = sprintf(
