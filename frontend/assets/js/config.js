@@ -1,7 +1,10 @@
-//mon url de base pour les appels API
-export const API_BASE_URL = '/my-cinema/backend/index.php';
+export const API_BASE_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+    ? 'http://localhost/my-cinema/backend/index.php'  // Local
+    : 'https://my-cinema-w64t.onrender.com';           // Production Render
 
-// ✅ AJOUTEZ CES LIGNES ICI (NOUVEAU)
+console.log('🌐 API URL:', API_BASE_URL);
+
+
 // ==========================================
 const API_KEY = 'cinema_admin_2026_secret_key_xyz';
 

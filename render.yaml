@@ -16,7 +16,7 @@ services:
     name: my-cinema-api
     env: docker
     plan: free
-    region: frankfurt  # Même région que la DB pour la latence
+    region: oregon  # Même région que la DB pour la latence
     rootDir: backend
     dockerfilePath: ./Dockerfile
     
@@ -33,19 +33,20 @@ services:
     healthCheckPath: /
 
   # --- FRONTEND (Déployé après le backend) ---
-  - type: web
+  - type: static
     name: my-cinema-frontend
-    env: node
     plan: free
-    region: frankfurt  # Même région
-    rootDir: frontend  # ⬅️ Spécifie le dossier si nécessaire
-    
-    buildCommand: npm install && npm run build
-    startCommand: npm start
-    
-    envVars:
-      - key: REACT_APP_API_URL
-        # Utilise le service backend déployé
-        value: https://my-cinema-api.onrender.com
-      - key: NODE_ENV
-        value: production
+    region: oregon  # Même région que le backend pour la latence
+    buildCommand: echo "No build needed - serving static files"
+    staticPublishPath: ./frontend
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /html/index.html
+    headers:
+      - path: /*
+        name: Cache-Control
+        value: public, max-age=0
+      - path: /assets/*
+        name: Cache-Control
+        value: public, max-age=31536000
