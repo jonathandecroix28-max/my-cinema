@@ -1,11 +1,26 @@
+# ============================================
+# BASE DE DONNÉES (PostgreSQL) - Déployée EN PREMIER
+# ============================================
+databases:
+  - name: my-cinema-db
+    databaseName: my_cinema
+    plan: free
+    region: oregon
+
+# ============================================
+# SERVICES WEB
+# ============================================
 services:
-  # --- BACKEND PHP avec Docker ---
+  # --- BACKEND PHP (Déployé après la DB) ---
   - type: web
     name: my-cinema-api
-    env: docker  # ⬅️ CHANGÉ de "php" à "docker"
+    env: docker
     plan: free
-    rootDir: backend  # ⬅️ IMPORTANT : pointe sur le dossier backend
-    dockerfilePath: ./Dockerfile  # ⬅️ Chemin vers le Dockerfile
+    region: frankfurt  # Même région que la DB pour la latence
+    rootDir: backend
+    dockerfilePath: ./Dockerfile
+    
+    # 🔗 Dépendances : Attend que la DB soit prête
     envVars:
       - key: DATABASE_URL
         fromDatabase:
@@ -13,19 +28,24 @@ services:
           property: connectionString
       - key: APP_ENV
         value: production
+    
+    # Health check (optionnel)
+    healthCheckPath: /
 
-  # --- FRONTEND NODE ---
+  # --- FRONTEND (Déployé après le backend) ---
   - type: web
     name: my-cinema-frontend
     env: node
     plan: free
+    region: frankfurt  # Même région
+    rootDir: frontend  # ⬅️ Spécifie le dossier si nécessaire
+    
     buildCommand: npm install && npm run build
     startCommand: npm start
+    
     envVars:
       - key: REACT_APP_API_URL
+        # Utilise le service backend déployé
         value: https://my-cinema-api.onrender.com
-
-# --- BASE DE DONNÉES PostgreSQL ---
-databases:
-  - name: my-cinema-db
-    plan: free
+      - key: NODE_ENV
+        value: production

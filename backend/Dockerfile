@@ -18,6 +18,8 @@ COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 # Définir le répertoire de travail
 WORKDIR /var/www/html
 
+
+
 # Copier composer.json et composer.lock (si existe)
 COPY composer.json composer.lock* ./
 
@@ -27,6 +29,10 @@ RUN composer install --no-dev --optimize-autoloader --no-scripts --prefer-dist -
 
 # Copier le reste des fichiers
 COPY . /var/www/html/
+
+COPY init-db.sh /usr/local/bin/
+
+RUN chmod +x /usr/local/bin/init-db.sh
 
 # Configurer Apache pour pointer sur /public
 ENV APACHE_DOCUMENT_ROOT=/var/www/html/public
