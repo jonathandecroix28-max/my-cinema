@@ -6,7 +6,7 @@ services:
     plan: free
     rootDirectory: backend 
     buildCommand: composer install
-    startCommand: php -S 0.0.0.0:$PORT index.php  
+    startCommand: php -S 0.0.0.0:$PORT public/index.php
     envVars:
       - key: DATABASE_URL
         fromDatabase:
