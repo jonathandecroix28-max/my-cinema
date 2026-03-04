@@ -5,11 +5,11 @@
     "require": {
         "php": "^8.0",
         "ext-pdo": "*",
-        "ext-mysqli": "*"
+        "ext-pdo_mysql": "*",
+        "ext-pdo_pgsql": "*"
     },
-    "autoload": {
-        "psr-4": {
-            "": "/"
-        }
+    "config": {
+        "optimize-autoloader": true,
+        "platform-check": false
     }
 }

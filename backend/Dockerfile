@@ -1,6 +1,6 @@
 FROM php:8.2-apache
 
-# Installer les extensions PHP nécessaires
+# Installer les dépendances système
 RUN apt-get update && apt-get install -y \
     libpq-dev \
     libzip-dev \
@@ -18,11 +18,15 @@ COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 # Définir le répertoire de travail
 WORKDIR /var/www/html
 
-# Copier tous les fichiers du backend
-COPY . /var/www/html/
+# Copier composer.json et composer.lock (si existe)
+COPY composer.json composer.lock* ./
 
-# Installer les dépendances Composer
-RUN composer install --no-dev --optimize-autoloader
+# Installer les dépendances avec verbose pour debug
+RUN composer install --no-dev --optimize-autoloader --no-scripts --prefer-dist -vvv || \
+    composer install --no-dev --no-scripts --prefer-dist
+
+# Copier le reste des fichiers
+COPY . /var/www/html/
 
 # Configurer Apache pour pointer sur /public
 ENV APACHE_DOCUMENT_ROOT=/var/www/html/public
