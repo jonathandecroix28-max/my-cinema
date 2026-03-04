@@ -175,7 +175,7 @@
             e.preventDefault();
             const pwd = document.getElementById('password').value;
             if (loginAsAdmin(pwd)) {
-                window.location.href = 'frontend/html/index.html';
+                window.location.href = 'index.html';
             } else {
                 const err = document.getElementById('error');
                 err.style.display = 'block';
