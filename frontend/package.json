@@ -1,0 +1,16 @@
+{
+    "name": "my-cinema-frontend",
+    "scripts": {
+        "start": "react-scripts start",
+        "build": "react-scripts build",
+        "serve": "serve -s build -l $PORT"
+    },
+    "dependencies": {
+        "react": "^18.x",
+        "react-dom": "^18.x",
+        "react-scripts": "5.x"
+    },
+    "devDependencies": {
+        "serve": "^14.0.0"
+    }
+}

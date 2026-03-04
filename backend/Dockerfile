@@ -30,7 +30,7 @@ RUN composer install --no-dev --optimize-autoloader --no-scripts --prefer-dist -
 # Copier le reste des fichiers
 COPY . /var/www/html/
 
-COPY init-db.sh /usr/local/bin/
+COPY scripts/init-db.sh /usr/local/bin/
 
 RUN chmod +x /usr/local/bin/init-db.sh
 
