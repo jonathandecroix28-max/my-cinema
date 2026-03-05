@@ -33,23 +33,16 @@ services:
     healthCheckPath: /
 
   # --- FRONTEND (Déployé après le backend) ---
-  - type: static
+  - type: web
     name: my-cinema-frontend
+    env: node
     plan: free
-    region: oregon  # Même région que le backend pour la latence
-    buildCommand: echo "No build needed - serving static files"
-    staticPublishPath: ./frontend
-    routes:
-      - type: rewrite
-        source: /*
-        destination: /html/index.html
-    headers:
-      - path: /**/*.css
-        name: Content-Type
-        value: text/css
-      - path: /**/*.js
-        name: Content-Type
-        value: application/javascript
-      - path: /**/*.html
-        name: Content-Type
-        value: text/html
+    region: oregon
+    rootDir: frontend
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
