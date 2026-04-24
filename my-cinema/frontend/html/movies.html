@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Films - My-Cinema</title>
+
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="../assets/css/index.css">
+    <link rel="icon" href="../assets/favicon.png">
+
+    <style>
+        body:not(.admin-mode) .admin-only {
+            display: none !important;
+        }
+
+        body.admin-mode .admin-only {
+            display: block !important;
+        }
+    </style>
+
+</head>
+
+<body class="bg-light">
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow-lg sticky-top">
+        <div class="container-fluid">
+            <!-- Logo -->
+            <a class="navbar-brand d-flex align-items-center" href="index.html">
+                <i class="bi bi-film me-2 fs-4"></i>
+                <span class="fw-bold">My-Cinema</span>
+            </a>
+
+            <!-- Mobile Toggle -->
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+
+            <!-- Navigation -->
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <!-- Menu principal (centré sur desktop) -->
+                <ul class="navbar-nav mx-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="index.html">
+                            <i class="bi bi-house-door me-1"></i>Accueil
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="movies.html">
+                            <i class="bi bi-film me-1"></i>Films
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="rooms.html">
+                            <i class="bi bi-door-open me-1"></i>Salles
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="screen.html">
+                            <i class="bi bi-calendar-event me-1"></i>Séances
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="planning.html">
+                            <i class="bi bi-calendar3 me-1"></i>Planning
+                        </a>
+                    </li>
+                </ul>
+
+                <!-- Badge utilisateur (à droite) -->
+                <div id="user-badge" class="d-flex align-items-center"></div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Header Section -->
+    <section class="page-header bg-gradient-primary text-black py-5">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <h1 class="display-4 fw-bold mb-3">
+                        <i class="bi bi-film"></i> Gestion des Films
+                    </h1>
+                    <p class="lead mb-0">
+                        Gérez votre catalogue de films : ajoutez, modifiez et organisez votre programmation
+                    </p>
+                </div>
+                <div class="col-md-4 text-end">
+                    <div class="stats-badge">
+                        <h3 class="mb-0" id="stockMovie">
+                            <i class="bi bi-collection-play"></i> 0 Films
+                        </h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <div class="container my-5">
+        <!-- Formulaire d'ajout -->
+        <div class="card shadow-lg border-0 mb-5 animate-fade-in admin-only">
+            <div class="card-header bg-primary text-white py-3">
+                <h4 class="mb-0">
+                    <i class="bi bi-plus-circle"></i> Ajouter un Nouveau Film
+                </h4>
+            </div>
+            <div class="card-body p-4">
+                <form id="addMovieForm">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">
+                                <i class="bi bi-card-text"></i> Titre du Film
+                            </label>
+                            <input type="text" class="form-control form-control-lg" id="movieTitle" list="listTitle"
+                                required placeholder="Ex: Inception">
+                            <datalist id="listTitle"></datalist>
+                        </div>
+
+                        <div class="col-md-3">
+                            <label class="form-label fw-bold">
+                                <i class="bi bi-clock"></i> Durée (min)
+                            </label>
+                            <input type="number" class="form-control form-control-lg" id="movieDuration" required
+                                min="1" max="85740" placeholder="148">
+                        </div>
+
+                        <div class="col-md-3">
+                            <label class="form-label fw-bold">
+                                <i class="bi bi-calendar"></i> Année
+                            </label>
+                            <input type="number" class="form-control form-control-lg" id="movieReleaseYear" required>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">
+                                <i class="bi bi-tags"></i> Genre
+                            </label>
+                            <input type="text" class="form-control form-control-lg" id="movieGenre" list="genreList"
+                                required placeholder="Science-Fiction">
+                            <datalist id="genreList"></datalist>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">
+                                <i class="bi bi-person"></i> Réalisateur
+                            </label>
+                            <input type="text" class="form-control form-control-lg" id="movieDirector" required
+                                placeholder="Christopher Nolan">
+                        </div>
+
+                        <div class="col-12">
+                            <label class="form-label fw-bold">
+                                <i class="bi bi-file-text"></i> Description
+                            </label>
+                            <textarea class="form-control" id="movieSummary" rows="4" required
+                                placeholder="Entrez une description complète du film..."></textarea>
+                        </div>
+
+                        <div class="col-12 text-end">
+                            <button type="reset" class="btn btn-outline-secondary btn-lg px-4">
+                                <i class="bi bi-x-circle"></i> Annuler
+                            </button>
+                            <button type="submit" class="btn btn-primary btn-lg px-5 ms-2">
+                                <i class="bi bi-plus-circle"></i> Ajouter le Film
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Système de filtrage -->
+        <div class="card shadow-sm border-0 mb-4 animate-fade-in-delay">
+            <div class="card-header bg-white border-0 py-3">
+                <h5 class="mb-0 fw-bold text-primary">
+                    <i class="bi bi-funnel"></i> Filtres de Recherche
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row g-3 d-flex justify-content-center align-items-end">
+                    <div class="col-md-3">
+                        <label class="form-label"><i class="bi bi-film"></i> Genre</label>
+                        <select id="filterGenre" class="form-select">
+                            <option value="">Tous les genres</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label"><i class="bi bi-calendar"></i> Année</label>
+                        <select id="filterYear" class="form-select">
+                            <option value="">Toutes</option>
+                        </select>
+                    </div>
+                    <div class="col-md-1 d-flex align-items-end">
+                        <button id="resetFilters" class="btn btn-outline-secondary w-100" title="Réinitialiser">
+                            <i class="bi bi-arrow-clockwise"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="mt-3 alert alert-info d-flex justify-content-center align-items-center" id="filterInfo">
+                    <span class="badge bg-info fs-6 px-3 py-2">
+                        <i class="bi bi-info-circle"></i>
+                        <span id="resultCount">0</span> film(s) trouvé(s)
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Liste des films -->
+        <div class="card shadow-lg border-0 animate-fade-in-delay-2">
+            <div class="card-header bg-white border-0 py-3">
+                <h5 class="mb-0 fw-bold text-primary">
+                    <i class="bi bi-list-ul"></i> Liste des Films
+                </h5>
+            </div>
+            <div class="card-body p-0">
+                <div id="screeningsList"></div>
+            </div>
+
+            <!-- Pagination -->
+            <div class="card-footer bg-white border-0 py-3">
+                <div class="d-flex justify-content-between align-items-center">
+                    <button id="btnPrevMovie" class="btn btn-outline-primary">
+                        <i class="bi bi-chevron-left"></i> Précédent
+                    </button>
+                    <span id="pageInfoMovie" class="fw-bold text-muted"></span>
+                    <button id="btnNextMovie" class="btn btn-outline-primary">
+                        Suivant <i class="bi bi-chevron-right"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!--Info Box-->
+    <div class="alert alert-primary mt-4 animate-fade-in-delay-2" role="alert">
+        <h5 class="alert-heading">
+            <i class="bi bi-info-circle"></i> Informations sur les Films
+        </h5>
+        <hr>
+        <ul class="mb-0">
+            <li><i class="bi bi-plus-circle"></i> Ajoutez de nouveaux films en remplissant le formulaire ci-dessus.</li>
+            <li><i class="bi bi-funnel"></i> Utilisez les filtres pour affiner votre recherche par genre ou année de
+                sortie.</li>
+            <li><i class="bi bi-pencil-square"></i> Modifiez ou supprimez des films directement depuis la liste.</li>
+        </ul>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer bg-gradient-primary text-white py-4 mt-5">
+        <div class="container text-center">
+            <p class="mb-0">© 2026 My-Cinema - Gestion de Cinéma</p>
+        </div>
+    </footer>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Script principal -->
+    <!--module pour les fonctions asynchrones-->
+    <script type="module" src="../assets/js/movie.js"></script>
+</body>
+
+</html>

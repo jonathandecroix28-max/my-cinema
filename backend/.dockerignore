@@ -1,7 +1,0 @@
-.env
-.git
-.gitignore
-vendor/
-node_modules/
-*.log
-test_full.php

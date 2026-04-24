@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Connexion - My Cinema</title>
+    <style>
+        /* style de base pour la page de connexion */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .login-box {
+            background: white;
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            width: 100%;
+            max-width: 400px;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            color: #333;
+        }
+
+        .role-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .role-btn {
+            padding: 20px;
+            border: 3px solid #e0e0e0;
+            background: white;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 16px;
+            font-weight: bold;
+        }
+
+        .role-btn:hover {
+            border-color: #667eea;
+        }
+
+        .role-btn.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-color: transparent;
+        }
+
+        .content {
+            display: none;
+        }
+
+        .content.active {
+            display: block;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            margin-bottom: 15px;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .error {
+            color: #e74c3c;
+            text-align: center;
+            margin-top: 10px;
+            display: none;
+        }
+
+        .info {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 15px;
+            font-size: 12px;
+            color: #666;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="login-box">
+        <h1>🎬 My Cinema</h1>
+
+        <div class="role-buttons">
+            <button class="role-btn active" onclick="selectRole('user')">
+                👤 Visiteur
+            </button>
+            <button class="role-btn" onclick="selectRole('admin')">
+                👑 Admin
+            </button>
+        </div>
+
+        <!-- Mode Visiteur -->
+        <div id="user-content" class="content active">
+            <p style="text-align: center; color: #666; margin-bottom: 20px;">
+                Consultation des films et séances
+            </p>
+            <button class="btn" onclick="enterAsUser()">
+                Continuer
+            </button>
+        </div>
+
+        <!-- Mode Admin -->
+        <div id="admin-content" class="content">
+            <form onsubmit="return handleLogin(event)">
+                <input type="password" id="password" placeholder="Mot de passe admin" required>
+                <button type="submit" class="btn">Se connecter</button>
+                <p class="error" id="error-msg">❌ Mot de passe incorrect</p>
+                <div class="info">
+                    💡 Test: <code>admin123</code>
+                </div>
+            </form>
+        </div>
+    </div>
+    <!-- script directement dans le html pour l'authentification -->
+    <script type="module">
+        import { loginAsAdmin, initSession } from './frontend/assets/js/config.js';
+        // Fonction pour basculer entre les rôles
+        window.selectRole = (role) => {
+            document.querySelectorAll('.role-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.content').forEach(c => c.classList.remove('active'));
+            event.target.classList.add('active');
+            document.getElementById(`${role}-content`).classList.add('active');
+        };
+
+        // Fonction pour entrer en tant que visiteur
+        window.enterAsUser = () => window.location.href = 'frontend/html/index.html';
+        // Fonction de gestion du formulaire de connexion admin
+        window.handleLogin = (e) => {
+            e.preventDefault();
+            const pwd = document.getElementById('password').value;
+            if (loginAsAdmin(pwd)) {
+                window.location.href = 'frontend/html/index.html';
+            } else {
+                const err = document.getElementById('error');
+                err.style.display = 'block';
+                setTimeout(() => err.style.display = 'none', 3000);
+            }
+            return false;
+        };
+        // Initialisation de la session pour vérifier si l'utilisateur est déjà connecté
+        initSession();
+    </script>
+</body>
+
+</html>

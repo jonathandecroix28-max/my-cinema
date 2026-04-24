@@ -1,48 +1,27 @@
-# ============================================
-# BASE DE DONNÉES (PostgreSQL) - Déployée EN PREMIER
-# ============================================
-databases:
-  - name: my-cinema-db
-    databaseName: my_cinema
-    plan: free
-    region: oregon
-
-# ============================================
-# SERVICES WEB
-# ============================================
 services:
-  # --- BACKEND PHP (Déployé après la DB) ---
   - type: web
-    name: my-cinema-api
-    env: docker
+    name: my-cinema
+    runtime: docker
+    rootDir: my-cinema
+    dockerContext: my-cinema
+    dockerfilePath: my-cinema/Dockerfile
     plan: free
-    region: oregon  # Même région que la DB pour la latence
-    rootDir: backend
-    dockerfilePath: ./Dockerfile
-    
-    # 🔗 Dépendances : Attend que la DB soit prête
+    autoDeployTrigger: commit
+    healthCheckPath: /
     envVars:
-      - key: DATABASE_URL
-        fromDatabase:
-          name: my-cinema-db
-          property: connectionString
       - key: APP_ENV
         value: production
-    
-    # Health check (optionnel)
-    healthCheckPath: /
-
-  # --- FRONTEND (Déployé après le backend) ---
-  - type: web
-    name: my-cinema-frontend
-    env: node
-    plan: free
-    region: oregon
-    rootDir: frontend
-    buildCommand: npm install
-    startCommand: npm start
-    envVars:
-      - key: NODE_ENV
-        value: production
-      - key: PORT
-        value: 10000
+      - key: APP_DEBUG
+        value: "false"
+      - key: DB_HOST
+        sync: false
+      - key: DB_PORT
+        value: "3306"
+      - key: DB_NAME
+        sync: false
+      - key: DB_USER
+        sync: false
+      - key: DB_PASS
+        sync: false
+      - key: DB_CHARSET
+        value: utf8mb4
