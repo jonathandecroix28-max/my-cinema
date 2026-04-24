@@ -19,6 +19,14 @@ session_start();
 //  En-tête pour indiquer que les réponses seront au format JSON
 header('Content-Type: application/json');
 
+$request = $_GET['action'] ?? '';
+
+if ($request === 'health') {
+    http_response_code(200);
+    echo json_encode(["status" => "ok"]);
+    exit;
+}
+
 //  Liste blanche des origines autorisées
 $allowedOrigins = [
     'http://localhost',
@@ -52,8 +60,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 // Charger les classes automatiquement
 require_once(__DIR__ . '/config/database.php');
 require_once __DIR__ . '/autoload.php';
-
-$request = $_GET['action'] ?? '';
 
 //  PROTECTION : Vérifier authentification pour actions sensibles
 if (AuthMiddleware::requiresAuth($request)) {
