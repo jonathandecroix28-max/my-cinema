@@ -2,7 +2,6 @@ services:
   - type: web
     name: my-cinema
     runtime: docker
-    rootDir: my-cinema
     dockerContext: .
     dockerfilePath: Dockerfile
     plan: free

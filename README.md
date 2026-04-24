@@ -156,6 +156,42 @@ Ou via phpMyAdmin :
 - Créer une base de données nommée `my-cinema`
 - Importer le fichier `backend/script.sql`
 
+### Déploiement sur Render avec MySQL externe
+
+Render ne fournit pas MySQL managé. Pour déployer ce projet sur Render, utilisez une base MySQL externe.
+
+#### 1. Créer une base MySQL externe
+Vous pouvez utiliser un service comme Aiven, Clever Cloud, Railway, un VPS, ou un hébergement MySQL classique.
+
+#### 2. Importer le schéma
+Importer le fichier `backend/script.sql` dans cette base.
+
+#### 3. Configurer les variables d’environnement sur Render
+Dans le service Render, renseigner :
+
+- `APP_ENV=production`
+- `APP_DEBUG=false`
+- `DB_HOST=<hôte_mysql_externe>`
+- `DB_PORT=3306`
+- `DB_NAME=<nom_base>`
+- `DB_USER=<utilisateur>`
+- `DB_PASS=<mot_de_passe>`
+- `DB_CHARSET=utf8mb4`
+
+Un exemple est disponible dans [my-cinema/.env.render.example](my-cinema/.env.render.example).
+
+#### 4. Fichier `render.yaml`
+Le projet utilise un déploiement Docker. Le fichier `render.yaml` pointe vers le dossier `my-cinema/`, et Render lance l’application PHP depuis ce dossier.
+
+#### 5. Vérification
+Une fois déployé, tester :
+
+- `/backend/index.php?action=health` → réponse `{"status":"ok"}`
+- `/backend/index.php?action=list_movies` → doit retourner la liste des films
+
+#### 6. Important
+Le frontend appelle le backend via `/backend/index.php`, donc il faut que le site soit servi depuis la racine du projet `my-cinema/`.
+
 ---
 
 ## 📁 Structure du projet
