@@ -2,8 +2,9 @@ services:
   - type: web
     name: my-cinema
     runtime: docker
-    dockerContext: my-cinema
-    dockerfilePath: my-cinema/Dockerfile
+    rootDir: my-cinema
+    dockerContext: .
+    dockerfilePath: Dockerfile
     plan: free
     autoDeployTrigger: commit
     healthCheckPath: /backend/index.php?action=health
